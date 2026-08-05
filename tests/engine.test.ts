@@ -14,7 +14,7 @@ import {
   translation,
   twixt,
 } from "../src/math";
-import { CLASSIC_RECONSTRUCTION } from "../src/reconstructed";
+import { CLASSIC_RECONSTRUCTION, IRIS_GT_RECONSTRUCTION } from "../src/reconstructed";
 import { TimelineRecorder, runTimeline, validateTimeline } from "../src/timeline";
 import type { SliderControlDefinition } from "../src/types";
 
@@ -139,6 +139,12 @@ describe("engine state", () => {
 });
 
 describe("TimelineV1", () => {
+  it("keeps reconstructed showcases on the default background", () => {
+    for (const timeline of [CLASSIC_RECONSTRUCTION, IRIS_GT_RECONSTRUCTION]) {
+      expect(timeline.events.some(({ controlId }) => controlId.startsWith("background"))).toBe(false);
+    }
+  });
+
   it("rejects malformed imports", () => {
     const result = validateTimeline({ ...CLASSIC_RECONSTRUCTION, tickRate: 30 });
     expect(result).toEqual({ ok: false, error: "Timeline tickRate must be 60." });

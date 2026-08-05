@@ -26,7 +26,6 @@ export const CLASSIC_RECONSTRUCTION: TimelineV1 = {
     { tick: 180, controlId: "arm.upper", value: 1.4 },
     { tick: 300, controlId: "position.y", value: 0.2 },
     { tick: 420, controlId: "fat-lines", value: true },
-    { tick: 540, controlId: "background", value: true },
     { tick: 660, controlId: "smear", value: true },
     { tick: 660, controlId: "fade", value: true },
     { tick: 840, controlId: "smooth", value: true },
@@ -35,7 +34,6 @@ export const CLASSIC_RECONSTRUCTION: TimelineV1 = {
     { tick: 1140, controlId: "smear", value: false },
     { tick: 1140, controlId: "smooth", value: false },
     { tick: 1140, controlId: "fade", value: false },
-    { tick: 1260, controlId: "background", value: false },
   ],
 };
 
@@ -62,8 +60,6 @@ export const IRIS_GT_RECONSTRUCTION: TimelineV1 = {
     { tick: 0, controlId: "lightness-0.value", value: 0.48 },
     { tick: 0, controlId: "outline", value: true },
     { tick: 180, controlId: "alpha-0", value: 0.72 },
-    { tick: 300, controlId: "background", value: true },
-    { tick: 420, controlId: "background-hue-rate", value: 0.65 },
     { tick: 540, controlId: "lighting", value: true },
     { tick: 540, controlId: "ambient.value", value: 0.22 },
     { tick: 540, controlId: "shiny.value", value: 0.8 },
@@ -74,7 +70,6 @@ export const IRIS_GT_RECONSTRUCTION: TimelineV1 = {
     { tick: 1080, controlId: "smooth", value: true },
     { tick: 1200, controlId: "smear", value: false },
     { tick: 1200, controlId: "smooth", value: false },
-    { tick: 1320, controlId: "background", value: false },
   ],
 };
 
