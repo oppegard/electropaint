@@ -1,0 +1,21 @@
+{
+  "name": "electropaint-browser-port",
+  "private": true,
+  "version": "1.0.0",
+  "license": "GPL-2.0-only",
+  "type": "module",
+  "scripts": {
+    "build": "tsc --noEmit && vite build",
+    "dev": "vite",
+    "fixtures": "sh ./scripts/generate-fixtures.sh",
+    "test": "vitest run",
+    "test:browser": "playwright test",
+    "test:browser:update": "playwright test --update-snapshots"
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.54.1",
+    "typescript": "^5.8.3",
+    "vite": "^7.0.6",
+    "vitest": "^3.2.4"
+  }
+}

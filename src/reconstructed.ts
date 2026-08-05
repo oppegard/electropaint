@@ -1,0 +1,83 @@
+import type { ElectropaintMode, TimelineV1 } from "./types";
+
+export const CLASSIC_RECONSTRUCTION: TimelineV1 = {
+  version: 1,
+  mode: "classic",
+  tickRate: 60,
+  compatibilityPolicy: "corrected",
+  metadata: {
+    title: "Classic reconstructed showcase",
+    reconstructed: true,
+  },
+  loop: { enabled: true, startTick: 0, endTick: 1440 },
+  events: [
+    { tick: 0, controlId: "position.x", value: -0.18 },
+    { tick: 0, controlId: "arm.value", value: 0.45 },
+    { tick: 0, controlId: "wrist.value", value: 0.65 },
+    { tick: 0, controlId: "size.value", value: 1.8 },
+    { tick: 0, controlId: "spin.value", value: 7.5 },
+    { tick: 0, controlId: "flip.value", value: 4.25 },
+    { tick: 0, controlId: "twist.value", value: 7 },
+    { tick: 0, controlId: "wheel.value", value: 4 },
+    { tick: 0, controlId: "map-rate.value", value: 2.3 },
+    { tick: 0, controlId: "map-range.value", value: 4.5 },
+    { tick: 0, controlId: "outline", value: true },
+    { tick: 180, controlId: "arm.rate", value: 0.32 },
+    { tick: 180, controlId: "arm.upper", value: 1.4 },
+    { tick: 300, controlId: "position.y", value: 0.2 },
+    { tick: 420, controlId: "fat-lines", value: true },
+    { tick: 540, controlId: "background", value: true },
+    { tick: 660, controlId: "smear", value: true },
+    { tick: 660, controlId: "fade", value: true },
+    { tick: 840, controlId: "smooth", value: true },
+    { tick: 1020, controlId: "fill", value: false },
+    { tick: 1140, controlId: "fill", value: true },
+    { tick: 1140, controlId: "smear", value: false },
+    { tick: 1140, controlId: "smooth", value: false },
+    { tick: 1140, controlId: "fade", value: false },
+    { tick: 1260, controlId: "background", value: false },
+  ],
+};
+
+export const IRIS_GT_RECONSTRUCTION: TimelineV1 = {
+  version: 1,
+  mode: "iris-gt",
+  tickRate: 60,
+  compatibilityPolicy: "corrected",
+  metadata: {
+    title: "IRIS_GT reconstructed showcase",
+    reconstructed: true,
+  },
+  loop: { enabled: true, startTick: 0, endTick: 1440 },
+  events: [
+    { tick: 0, controlId: "arm.value", value: 0.5 },
+    { tick: 0, controlId: "wrist.value", value: 0.55 },
+    { tick: 0, controlId: "size.value", value: 1.65 },
+    { tick: 0, controlId: "spin.value", value: 7 },
+    { tick: 0, controlId: "flip.value", value: 5 },
+    { tick: 0, controlId: "twist.value", value: 8 },
+    { tick: 0, controlId: "wheel.value", value: 3.5 },
+    { tick: 0, controlId: "hue-0.value", value: 0.04 },
+    { tick: 0, controlId: "hue-0.rate", value: 0.04 },
+    { tick: 0, controlId: "lightness-0.value", value: 0.48 },
+    { tick: 0, controlId: "outline", value: true },
+    { tick: 180, controlId: "alpha-0", value: 0.72 },
+    { tick: 300, controlId: "background", value: true },
+    { tick: 420, controlId: "background-hue-rate", value: 0.65 },
+    { tick: 540, controlId: "lighting", value: true },
+    { tick: 540, controlId: "ambient.value", value: 0.22 },
+    { tick: 540, controlId: "shiny.value", value: 0.8 },
+    { tick: 660, controlId: "depth", value: true },
+    { tick: 780, controlId: "ribbons", value: true },
+    { tick: 960, controlId: "ribbons", value: false },
+    { tick: 960, controlId: "smear", value: true },
+    { tick: 1080, controlId: "smooth", value: true },
+    { tick: 1200, controlId: "smear", value: false },
+    { tick: 1200, controlId: "smooth", value: false },
+    { tick: 1320, controlId: "background", value: false },
+  ],
+};
+
+export function reconstructionForMode(mode: ElectropaintMode): TimelineV1 {
+  return mode === "classic" ? CLASSIC_RECONSTRUCTION : IRIS_GT_RECONSTRUCTION;
+}
