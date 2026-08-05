@@ -28,7 +28,7 @@ test("classic default is deterministic", async ({ page }) => {
   await advanceTo(page, 240);
   await expect(page.locator("#electropaint")).toHaveScreenshot("classic-motion-outline.png");
   await advanceTo(page, 720);
-  await expect(page.locator("#electropaint")).toHaveScreenshot("classic-fade-smear.png");
+  await expect(page.locator("#electropaint")).toHaveScreenshot("classic-fade.png");
   await advanceTo(page, 1080);
   await expect(page.locator("#electropaint")).toHaveScreenshot("classic-outline-only.png");
   expect(errors).toEqual([]);

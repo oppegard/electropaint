@@ -139,9 +139,10 @@ describe("engine state", () => {
 });
 
 describe("TimelineV1", () => {
-  it("keeps reconstructed showcases on the default background", () => {
+  it("keeps excluded effects out of reconstructed showcases", () => {
     for (const timeline of [CLASSIC_RECONSTRUCTION, IRIS_GT_RECONSTRUCTION]) {
       expect(timeline.events.some(({ controlId }) => controlId.startsWith("background"))).toBe(false);
+      expect(timeline.events.some(({ controlId }) => controlId === "smear")).toBe(false);
     }
   });
 
