@@ -1,7 +1,12 @@
 import "./styles.css";
 import { controlsForMode } from "./controls";
 import { ElectropaintEngine, TICK_RATE } from "./engine";
-import { iamralphtReconstructionForMode, reconstructionForMode } from "./reconstructed";
+import {
+  iamralphtReconstructionForMode,
+  melloReconstructionForMode,
+  reconstructionForMode,
+} from "./reconstructed";
+import { MELLO_PROFILE } from "./mello";
 import { ElectropaintRenderer } from "./renderer";
 import { TimelinePlayback, TimelineRecorder, validateTimeline } from "./timeline";
 import type {
@@ -26,6 +31,7 @@ app.innerHTML = `
     <div class="edition-switcher" aria-label="Session and historical edition">
       <label for="session">Session</label>
       <select id="session">
+        <option value="mello">1994 default script</option>
         <option value="showcase">Source showcase</option>
         <option value="elektropaintjs">Elektropaint.js screensaver</option>
         <option value="custom" hidden>Imported / custom</option>
@@ -33,7 +39,7 @@ app.innerHTML = `
       <label for="mode">Edition</label>
       <select id="mode">
         <option value="classic">IRIS_4D · indexed</option>
-        <option value="iris-gt">IRIS_GT · RGB</option>
+        <option value="iris-gt" selected>IRIS_GT · RGB</option>
       </select>
       <label for="policy">Compatibility</label>
       <select id="policy">
@@ -50,7 +56,7 @@ app.innerHTML = `
         <div class="webgl-message" id="webgl-message" role="status" hidden></div>
         <div class="stage-overlay">
           <span class="live-dot" aria-hidden="true"></span>
-          <span id="playback-label">Reconstructed showcase</span>
+          <span id="playback-label">1994 default script</span>
           <span id="tick-label">000000</span>
         </div>
       </div>
@@ -91,7 +97,8 @@ app.innerHTML = `
     <h2>Electropaint</h2>
     <p>Panel Library / Electropaint Copyright © 1986 David A. Tristram.</p>
     <p>Electropaint™ is a Registered U.S. Trademark of Tristram Visual.</p>
-    <p>This browser edition is a source-led reconstruction. Its bundled autoplay timelines are new reconstructions, not recovered SGI screensaver scripts.</p>
+    <p>The default session reconstructs the famous “mello” script from the decompiled 1994 OpenGL screensaver. Press M to toggle its shipped and restored OpenGL looks without restarting the script.</p>
+    <p>The source showcases are new reconstructions, not recovered SGI screensaver scripts.</p>
     <p>The Elektropaint.js session reconstructs Ralph Thomas's 2013 WebKit interpretation with deterministic random walks and native WebGL squares.</p>
     <p><a href="https://www.tristram.com/" rel="noreferrer">Tristram Visual</a></p>
   </dialog>
@@ -117,8 +124,8 @@ const webglMessage = required<HTMLElement>("#webgl-message");
 const importFile = required<HTMLInputElement>("#import-file");
 const reducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
 
-let engine = new ElectropaintEngine("classic", "corrected");
-let activeTimeline = structuredClone(reconstructionForMode("classic"));
+let engine = new ElectropaintEngine("iris-gt", "corrected");
+let activeTimeline = melloReconstructionForMode();
 let playback = new TimelinePlayback(activeTimeline);
 const recorder = new TimelineRecorder();
 let hasRecording = false;
@@ -444,31 +451,43 @@ function startTimeline(timeline: TimelineV1, message?: string): void {
   modeSelect.value = engine.mode;
   policySelect.value = engine.compatibilityPolicy;
   const isIamralpht = timeline.metadata?.profile === "iamralpht-elektropaintjs";
-  sessionSelect.value = isIamralpht
+  const isMello = timeline.metadata?.profile === MELLO_PROFILE;
+  const isProfile = isIamralpht || isMello;
+  sessionSelect.value = isMello
+    ? "mello"
+    : isIamralpht
     ? "elektropaintjs"
     : timeline.metadata?.reconstructed ? "showcase" : "custom";
-  playbackLabel.textContent = isIamralpht
+  playbackLabel.textContent = isMello
+    ? "1994 default script · shipped look"
+    : isIamralpht
     ? "Elektropaint.js reconstruction"
     : timeline.metadata?.reconstructed
       ? "Reconstructed showcase"
       : timeline.metadata?.title ?? "Imported timeline";
   renderControls();
-  controlsRoot.inert = isIamralpht;
-  controlsRoot.setAttribute("aria-disabled", String(isIamralpht));
-  controlPanel.classList.toggle("session-locked", isIamralpht);
+  controlsRoot.inert = isProfile;
+  controlsRoot.setAttribute("aria-disabled", String(isProfile));
+  controlPanel.classList.toggle("session-locked", isProfile);
   setStatus(message ?? (reducedMotion
-    ? isIamralpht
+    ? isMello
+      ? "Reduced motion is enabled; the 1994 default script is paused on its initial frame. Press M to toggle the shipped and restored looks."
+      : isIamralpht
       ? "Reduced motion is enabled; Ralph Thomas’s Elektropaint.js reconstruction is paused on its initial frame."
       : "Reduced motion is enabled; the reconstructed session is paused on its initial frame."
-    : isIamralpht
+    : isMello
+      ? "Playing the decompiled 1994 “mello” default script. Press M to toggle the shipped and restored OpenGL looks without restarting."
+      : isIamralpht
       ? "Playing Ralph Thomas’s Elektropaint.js behavior as a deterministic reconstructed session. Choose Continue to return to live controls."
       : "Playing a deterministic reconstructed showcase at 60 Hz."));
 }
 
 function selectedReconstruction(mode: ElectropaintMode): TimelineV1 {
-  const timeline = sessionSelect.value === "elektropaintjs"
-    ? iamralphtReconstructionForMode(mode)
-    : structuredClone(reconstructionForMode(mode));
+  const timeline = sessionSelect.value === "mello"
+    ? melloReconstructionForMode(mode)
+    : sessionSelect.value === "elektropaintjs"
+      ? iamralphtReconstructionForMode(mode)
+      : structuredClone(reconstructionForMode(mode));
   timeline.compatibilityPolicy = policySelect.value as CompatibilityPolicy;
   return timeline;
 }
@@ -603,6 +622,16 @@ document.addEventListener("keydown", (event) => {
     event.preventDefault();
     if (document.fullscreenElement) void document.exitFullscreen();
     else void stage.requestFullscreen();
+    return;
+  }
+  if (event.key.toLowerCase() === "m" && engine.reconstructionProfile === MELLO_PROFILE) {
+    event.preventDefault();
+    const shippedLook = engine.toggle1994Look();
+    renderRevision += 1;
+    playbackLabel.textContent = `1994 default script · ${shippedLook ? "shipped" : "restored"} look`;
+    setStatus(shippedLook
+      ? "Switched to the shipped 1994 look: its original camera and single visible wing. The script continues uninterrupted."
+      : "Switched to the restored OpenGL look: intended camera and four mirrored wings. The script continues uninterrupted.");
     return;
   }
   if (engine.reconstructionProfile) return;

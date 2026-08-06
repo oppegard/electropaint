@@ -1,4 +1,4 @@
-import { multiply, perspective, translation } from "./math";
+import { multiply, perspective, scaling, translation } from "./math";
 import type { RenderData, Vec4Color } from "./types";
 
 type StatusCallback = (message: string | null) => void;
@@ -244,7 +244,7 @@ export class ElectropaintRenderer {
     gl.enable(gl.BLEND);
     gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA);
 
-    const viewProjection = this.viewProjection();
+    const viewProjection = this.viewProjection(data.camera);
     if (data.ribbonMode) this.drawRibbons(data, viewProjection);
     else this.drawSquares(data, viewProjection);
 
@@ -465,9 +465,12 @@ export class ElectropaintRenderer {
     gl.drawArrays(gl.TRIANGLES, 0, 6);
   }
 
-  private viewProjection(): number[] {
+  private viewProjection(camera: RenderData["camera"]): number[] {
     const aspect = this.canvas.width / Math.max(1, this.canvas.height);
-    return multiply(perspective(30, aspect, 0.01, 10000), translation(0, 0, -10));
+    const selected = camera ?? { fovDegrees: 30, distance: 10, flipY: false };
+    let viewProjection = perspective(selected.fovDegrees, aspect, 0.01, 10000);
+    if (selected.flipY) viewProjection = multiply(viewProjection, scaling(1, -1, 1));
+    return multiply(viewProjection, translation(0, 0, -selected.distance));
   }
 
   private createProgram(vertexSource: string, fragmentSource: string): WebGLProgram {

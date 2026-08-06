@@ -1,5 +1,6 @@
 import type { ElectropaintMode, TimelineV1 } from "./types";
 import { IAMRALPHT_PROFILE } from "./iamralpht";
+import { MELLO_PROFILE } from "./mello";
 
 export const CLASSIC_RECONSTRUCTION: TimelineV1 = {
   version: 1,
@@ -84,6 +85,22 @@ export function iamralphtReconstructionForMode(mode: ElectropaintMode): Timeline
       title: "Elektropaint.js screensaver reconstruction",
       reconstructed: true,
       profile: IAMRALPHT_PROFILE,
+    },
+    loop: { enabled: false, startTick: 0, endTick: Number.MAX_SAFE_INTEGER },
+    events: [],
+  };
+}
+
+export function melloReconstructionForMode(mode: ElectropaintMode = "iris-gt"): TimelineV1 {
+  return {
+    version: 1,
+    mode,
+    tickRate: 60,
+    compatibilityPolicy: "corrected",
+    metadata: {
+      title: "Electropaint 1994 default script",
+      reconstructed: true,
+      profile: MELLO_PROFILE,
     },
     loop: { enabled: false, startTick: 0, endTick: Number.MAX_SAFE_INTEGER },
     events: [],
