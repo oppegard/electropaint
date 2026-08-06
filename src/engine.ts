@@ -18,13 +18,15 @@ import {
   wrap,
   type Mat4,
 } from "./math";
+import { IamralphtReconstruction, IAMRALPHT_PROFILE, type IamralphtStateSnapshot } from "./iamralpht";
 import type {
   CompatibilityPolicy,
   ElectropaintMode,
   ModulatedSliderState,
+  ReconstructionProfile,
   RenderData,
   RenderRibbonVertex,
-  RenderTriangle,
+  RenderSquare,
   SliderControlDefinition,
   SliderMode,
   TimelineEventV1,
@@ -75,6 +77,8 @@ export interface ElectropaintStateSnapshot {
   sliders: Record<string, ModulatedSliderState>;
   values: Record<string, number | boolean>;
   history: HistorySample[];
+  reconstructionProfile: ReconstructionProfile | null;
+  reconstruction: IamralphtStateSnapshot | null;
 }
 
 const emptySample = (): HistorySample => ({
@@ -170,6 +174,7 @@ export class ElectropaintEngine {
   private sliders = new Map<string, ModulatedSliderState>();
   private values = new Map<string, number | boolean>();
   private history: HistorySample[] = Array.from({ length: HISTORY_LENGTH }, emptySample);
+  private reconstruction: IamralphtReconstruction | null = null;
 
   constructor(mode: ElectropaintMode = "classic", compatibilityPolicy: CompatibilityPolicy = "corrected") {
     this.mode = mode;
@@ -195,6 +200,7 @@ export class ElectropaintEngine {
     this.sliders.clear();
     this.values.clear();
     this.history = Array.from({ length: HISTORY_LENGTH }, emptySample);
+    this.reconstruction = null;
 
     for (const definition of controlsForMode(mode)) {
       if (definition.kind === "slider") {
@@ -206,6 +212,11 @@ export class ElectropaintEngine {
   }
 
   step(): void {
+    if (this.reconstruction) {
+      this.reconstruction.step();
+      this.tick += 1;
+      return;
+    }
     if (this.booleanValue("stop")) {
       this.tick += 1;
       return;
@@ -356,6 +367,16 @@ export class ElectropaintEngine {
     return this.applyControlEvent({ controlId, value });
   }
 
+  setReconstruction(profile: ReconstructionProfile | undefined): void {
+    this.reconstruction = profile === IAMRALPHT_PROFILE
+      ? new IamralphtReconstruction()
+      : null;
+  }
+
+  get reconstructionProfile(): ReconstructionProfile | null {
+    return this.reconstruction ? IAMRALPHT_PROFILE : null;
+  }
+
   getControlValue(controlId: string): TimelineEventValue | undefined {
     const separator = controlId.lastIndexOf(".");
     if (separator >= 0) {
@@ -390,11 +411,16 @@ export class ElectropaintEngine {
       ),
       values: Object.fromEntries(this.values),
       history: this.history.map((sample) => ({ ...sample })),
+      reconstructionProfile: this.reconstructionProfile,
+      reconstruction: this.reconstruction?.captureState() ?? null,
     };
   }
 
   renderData(): RenderData {
-    const triangles: RenderTriangle[] = [];
+    if (this.reconstruction) {
+      return this.reconstruction.renderData(this.mode, this.compatibilityPolicy, this.tick);
+    }
+    const squares: RenderSquare[] = [];
     const ribbons: RenderRibbonVertex[][] = [];
     const count = Math.trunc(this.slider("count").value);
     let chain = rotationX(this.wheel);
@@ -445,7 +471,7 @@ export class ElectropaintEngine {
             interpolated.wrist,
             interpolated.size,
           );
-        triangles.push({
+        squares.push({
           model,
           fill: current.fill,
           outline: current.outline && (this.compatibilityPolicy === "corrected" || mirrorIndex !== 0),
@@ -473,7 +499,7 @@ export class ElectropaintEngine {
       mode: this.mode,
       compatibilityPolicy: this.compatibilityPolicy,
       tick: this.tick,
-      triangles,
+      squares,
       ribbons,
       background: this.backgroundColor(),
       smear: this.booleanValue("smear"),

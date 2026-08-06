@@ -11,7 +11,7 @@ interface Programs {
 }
 
 interface Buffers {
-  triangle: WebGLBuffer;
+  square: WebGLBuffer;
   edge: WebGLBuffer;
   quad: WebGLBuffer;
   ribbon: WebGLBuffer;
@@ -149,10 +149,13 @@ in vec4 vColor;
 out vec4 outColor;
 void main() { outColor = vColor; }`;
 
-const TRIANGLE = new Float32Array([
+const SQUARE = new Float32Array([
   0, 0, 0,
   0.2, 0, 0,
-  0.1, 1.7320508 / 10, 0,
+  0, 0.2, 0,
+  0, 0.2, 0,
+  0.2, 0, 0,
+  0.2, 0.2, 0,
 ]);
 
 const EDGE_CORNERS = new Float32Array([
@@ -163,8 +166,9 @@ const EDGE_CORNERS = new Float32Array([
 const QUAD = new Float32Array([-1, -1, 1, -1, -1, 1, -1, 1, 1, -1, 1, 1]);
 const EDGES: readonly [readonly [number, number, number], readonly [number, number, number]][] = [
   [[0, 0, 0], [0.2, 0, 0]],
-  [[0.2, 0, 0], [0.1, 1.7320508 / 10, 0]],
-  [[0.1, 1.7320508 / 10, 0], [0, 0, 0]],
+  [[0.2, 0, 0], [0.2, 0.2, 0]],
+  [[0.2, 0.2, 0], [0, 0.2, 0]],
+  [[0, 0.2, 0], [0, 0, 0]],
 ];
 const FADE_SHIFTS = [0, 2, 2, 0, 1, 3, 3, 1, 0, 2, 2, 0, 1, 3, 3, 1];
 const FADE_ROWS = [0, 2, 0, 2, 1, 3, 1, 3, 1, 3, 1, 3, 0, 2, 0, 2];
@@ -242,7 +246,7 @@ export class ElectropaintRenderer {
 
     const viewProjection = this.viewProjection();
     if (data.ribbonMode) this.drawRibbons(data, viewProjection);
-    else this.drawTriangles(data, viewProjection);
+    else this.drawSquares(data, viewProjection);
 
     gl.bindFramebuffer(gl.FRAMEBUFFER, null);
     gl.viewport(0, 0, this.canvas.width, this.canvas.height);
@@ -273,7 +277,7 @@ export class ElectropaintRenderer {
         ribbon: this.createProgram(RIBBON_VERTEX, RIBBON_FRAGMENT),
       };
       this.buffers = {
-        triangle: this.createBuffer(TRIANGLE),
+        square: this.createBuffer(SQUARE),
         edge: this.createBuffer(EDGE_CORNERS),
         quad: this.createBuffer(QUAD),
         ribbon: this.createBuffer(new Float32Array(0), gl.DYNAMIC_DRAW),
@@ -345,33 +349,33 @@ export class ElectropaintRenderer {
     return { texture, framebuffer, depth };
   }
 
-  private drawTriangles(data: RenderData, viewProjection: number[]): void {
+  private drawSquares(data: RenderData, viewProjection: number[]): void {
     const gl = this.requireGl();
     const programs = this.requirePrograms();
     const buffers = this.requireBuffers();
     gl.useProgram(programs.scene);
-    gl.bindBuffer(gl.ARRAY_BUFFER, buffers.triangle);
+    gl.bindBuffer(gl.ARRAY_BUFFER, buffers.square);
     gl.enableVertexAttribArray(0);
     gl.vertexAttribPointer(0, 3, gl.FLOAT, false, 0, 0);
     this.uniformMatrix(programs.scene, "uViewProjection", viewProjection);
     gl.uniform1i(gl.getUniformLocation(programs.scene, "uLighting"), data.lighting ? 1 : 0);
-    for (const triangle of data.triangles) {
-      this.uniformMatrix(programs.scene, "uModel", triangle.model);
-      gl.uniform1f(gl.getUniformLocation(programs.scene, "uAmbient"), triangle.ambient);
-      gl.uniform1f(gl.getUniformLocation(programs.scene, "uShiny"), triangle.shiny);
-      if (triangle.fill) {
-        this.uniformColor(programs.scene, "uColor", triangle.fillColor);
-        gl.drawArrays(gl.TRIANGLES, 0, 3);
+    for (const square of data.squares) {
+      this.uniformMatrix(programs.scene, "uModel", square.model);
+      gl.uniform1f(gl.getUniformLocation(programs.scene, "uAmbient"), square.ambient);
+      gl.uniform1f(gl.getUniformLocation(programs.scene, "uShiny"), square.shiny);
+      if (square.fill) {
+        this.uniformColor(programs.scene, "uColor", square.fillColor);
+        gl.drawArrays(gl.TRIANGLES, 0, 6);
       }
-      if (triangle.outline) {
+      if (square.outline) {
         this.drawEdges(
-          triangle.model,
+          square.model,
           viewProjection,
-          triangle.outlineColor,
-          triangle.fatLine ? 3 : 1,
+          square.outlineColor,
+          square.fatLine ? 3 : 1,
         );
         gl.useProgram(programs.scene);
-        gl.bindBuffer(gl.ARRAY_BUFFER, buffers.triangle);
+        gl.bindBuffer(gl.ARRAY_BUFFER, buffers.square);
         gl.enableVertexAttribArray(0);
         gl.vertexAttribPointer(0, 3, gl.FLOAT, false, 0, 0);
       }

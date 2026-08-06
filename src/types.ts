@@ -1,6 +1,7 @@
 export type ElectropaintMode = "classic" | "iris-gt";
 export type CompatibilityPolicy = "corrected" | "source";
 export type SliderMode = "wrap" | "bounce";
+export type ReconstructionProfile = "iamralpht-elektropaintjs";
 
 export interface ModulatedSliderState {
   value: number;
@@ -75,6 +76,7 @@ export interface TimelineV1 {
   metadata?: {
     title?: string;
     reconstructed?: boolean;
+    profile?: ReconstructionProfile;
   };
 }
 
@@ -85,7 +87,7 @@ export interface Vec4Color {
   a: number;
 }
 
-export interface RenderTriangle {
+export interface RenderSquare {
   model: number[];
   fill: boolean;
   outline: boolean;
@@ -106,7 +108,7 @@ export interface RenderData {
   mode: ElectropaintMode;
   compatibilityPolicy: CompatibilityPolicy;
   tick: number;
-  triangles: RenderTriangle[];
+  squares: RenderSquare[];
   ribbons: RenderRibbonVertex[][];
   background: Vec4Color;
   smear: boolean;

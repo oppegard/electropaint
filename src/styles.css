@@ -183,6 +183,7 @@ kbd { color: var(--acid); font: 0.65rem ui-monospace, "SFMono-Regular", Menlo, m
 
 .panel-heading h2 { margin: 0; font-size: 1.2rem; font-weight: 500; }
 #controls { max-height: min(72vh, 850px); overflow: auto; }
+.control-panel.session-locked #controls { opacity: 0.42; filter: saturate(0.35); }
 .control-section { padding: 1rem 1.2rem; border-bottom: 1px solid var(--line); }
 
 .toggle-grid {

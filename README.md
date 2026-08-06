@@ -1,6 +1,6 @@
 # Electropaint — browser reconstruction
 
-Electropaint is a kinetic graphics program built from repeating triangles,
+Electropaint is a kinetic graphics program built from repeating squares,
 layered transformations, color, and time. This repository is a source-led port
 of Electropaint to TypeScript and native WebGL2, designed to run as a standalone
 static site in a current browser with no production runtime dependencies.
@@ -10,7 +10,7 @@ static site in a current browser with no production runtime dependencies.
 David A. Tristram created Electropaint as an SGI IRIX screensaver. The preserved
 source carries a 1986 Panel Library/Electropaint copyright notice and describes
 both a screensaver and an interactive mode. Its apparent complexity comes from
-a compact system: a history of triangles is transformed by controls such as
+a compact system: a history of shapes is transformed by controls such as
 wheel, spin, flip, arm, wrist, twist, and zoom. The Panel Library's compound
 sliders can modulate those values automatically, while its recorder can capture
 and replay a changing control state.
@@ -40,7 +40,13 @@ The bundled autoplay sequences are clearly labeled reconstructions. They are
 not presented as recovered SGI screensaver scripts. A `source` compatibility
 mode preserves known source behavior, while `corrected` mode applies the one
 documented visual correction: restoring the omitted outline on the first
-mirrored triangle.
+mirrored shape.
+
+The Session menu also includes a deterministic reconstruction of Ralph
+Thomas's 2013 [Elektropaint.js](https://github.com/iamralpht/elektropaintjs)
+interpretation—the rolling, perspective-stacked animation many people
+recognize as the Electropaint screensaver. It retains the original
+implementation's random-walk motion, RGB behavior, and square geometry.
 
 ## Source material and credits
 
@@ -78,19 +84,17 @@ Run the checks with:
 
 ```sh
 npm test
-npm run test:browser
 npm run build
 ```
 
 `npm run fixtures` rebuilds the checked-in numeric fixture from the small C
-reference harness. `npm run test:browser:update` updates the Playwright visual
-baselines after the Playwright browser engines have been installed.
+reference harness.
 
 ## Repository layout
 
 - `src/` — deterministic engine, controls, timeline support, UI, and WebGL2
   renderer.
-- `tests/` — source-derived unit fixtures and cross-browser Playwright tests.
+- `tests/` — source-derived numeric fixtures and unit tests.
 - `igl_0.1.8/` — extracted historical IGL, Panel Library, and Electropaint
   source material.
 - `docs/plans/` — implementation plan and per-deviation implementation notes.

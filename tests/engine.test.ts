@@ -14,7 +14,11 @@ import {
   translation,
   twixt,
 } from "../src/math";
-import { CLASSIC_RECONSTRUCTION, IRIS_GT_RECONSTRUCTION } from "../src/reconstructed";
+import {
+  CLASSIC_RECONSTRUCTION,
+  iamralphtReconstructionForMode,
+  IRIS_GT_RECONSTRUCTION,
+} from "../src/reconstructed";
 import { TimelineRecorder, runTimeline, validateTimeline } from "../src/timeline";
 import type { SliderControlDefinition } from "../src/types";
 
@@ -128,13 +132,13 @@ describe("engine state", () => {
     source.apply("outline", true);
     source.apply("speed.value", 1);
     source.step();
-    expect(source.renderData().triangles.slice(0, 2).map(({ outline }) => outline)).toEqual([false, true]);
+    expect(source.renderData().squares.slice(0, 2).map(({ outline }) => outline)).toEqual([false, true]);
 
     const corrected = new ElectropaintEngine("classic", "corrected");
     corrected.apply("outline", true);
     corrected.apply("speed.value", 1);
     corrected.step();
-    expect(corrected.renderData().triangles[0]?.outline).toBe(true);
+    expect(corrected.renderData().squares[0]?.outline).toBe(true);
   });
 });
 
@@ -149,6 +153,15 @@ describe("TimelineV1", () => {
   it("rejects malformed imports", () => {
     const result = validateTimeline({ ...CLASSIC_RECONSTRUCTION, tickRate: 30 });
     expect(result).toEqual({ ok: false, error: "Timeline tickRate must be 60." });
+  });
+
+  it("preserves known reconstruction profiles and rejects unknown ones", () => {
+    const timeline = iamralphtReconstructionForMode("classic");
+    expect(validateTimeline(timeline)).toEqual({ ok: true, timeline });
+    expect(validateTimeline({
+      ...timeline,
+      metadata: { ...timeline.metadata, profile: "unknown-profile" },
+    }).ok).toBe(false);
   });
 
   it("rejects type-incompatible and out-of-range control events", () => {
@@ -166,6 +179,24 @@ describe("TimelineV1", () => {
     const first = runTimeline(CLASSIC_RECONSTRUCTION, 720).captureState();
     const second = runTimeline(CLASSIC_RECONSTRUCTION, 720).captureState();
     expect(second).toEqual(first);
+  });
+
+  it("reconstructs the Elektropaint.js rolling 40-shape flight", () => {
+    const timeline = iamralphtReconstructionForMode("classic");
+    const first = runTimeline(timeline, 180);
+    const second = runTimeline(timeline, 180);
+    expect(second.captureState()).toEqual(first.captureState());
+
+    const frame = first.renderData();
+    expect(frame.squares).toHaveLength(40);
+    expect(frame.squares.every(({ mirrorIndex }) => mirrorIndex === 0)).toBe(true);
+    expect(frame.squares.every(({ outlineColor }) => (
+      outlineColor.r === 1 && outlineColor.g === 1 && outlineColor.b === 1 && outlineColor.a === 1
+    ))).toBe(true);
+    expect(new Set(frame.squares.map(({ fillColor }) => (
+      `${fillColor.r},${fillColor.g},${fillColor.b}`
+    ))).size).toBeGreaterThan(1);
+    expect(first.captureState().reconstruction?.wings).toHaveLength(40);
   });
 
   it("records and appends stable control IDs", () => {

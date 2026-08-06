@@ -1,4 +1,5 @@
 import type { ElectropaintMode, TimelineV1 } from "./types";
+import { IAMRALPHT_PROFILE } from "./iamralpht";
 
 export const CLASSIC_RECONSTRUCTION: TimelineV1 = {
   version: 1,
@@ -71,4 +72,20 @@ export const IRIS_GT_RECONSTRUCTION: TimelineV1 = {
 
 export function reconstructionForMode(mode: ElectropaintMode): TimelineV1 {
   return mode === "classic" ? CLASSIC_RECONSTRUCTION : IRIS_GT_RECONSTRUCTION;
+}
+
+export function iamralphtReconstructionForMode(mode: ElectropaintMode): TimelineV1 {
+  return {
+    version: 1,
+    mode,
+    tickRate: 60,
+    compatibilityPolicy: "corrected",
+    metadata: {
+      title: "Elektropaint.js screensaver reconstruction",
+      reconstructed: true,
+      profile: IAMRALPHT_PROFILE,
+    },
+    loop: { enabled: false, startTick: 0, endTick: Number.MAX_SAFE_INTEGER },
+    events: [],
+  };
 }
