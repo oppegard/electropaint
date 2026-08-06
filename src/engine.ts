@@ -19,6 +19,7 @@ import {
   type Mat4,
 } from "./math";
 import { IamralphtReconstruction, IAMRALPHT_PROFILE, type IamralphtStateSnapshot } from "./iamralpht";
+import { MelloReconstruction, MELLO_PROFILE, type MelloStateSnapshot } from "./mello";
 import type {
   CompatibilityPolicy,
   ElectropaintMode,
@@ -78,7 +79,7 @@ export interface ElectropaintStateSnapshot {
   values: Record<string, number | boolean>;
   history: HistorySample[];
   reconstructionProfile: ReconstructionProfile | null;
-  reconstruction: IamralphtStateSnapshot | null;
+  reconstruction: IamralphtStateSnapshot | MelloStateSnapshot | null;
 }
 
 const emptySample = (): HistorySample => ({
@@ -174,7 +175,7 @@ export class ElectropaintEngine {
   private sliders = new Map<string, ModulatedSliderState>();
   private values = new Map<string, number | boolean>();
   private history: HistorySample[] = Array.from({ length: HISTORY_LENGTH }, emptySample);
-  private reconstruction: IamralphtReconstruction | null = null;
+  private reconstruction: IamralphtReconstruction | MelloReconstruction | null = null;
 
   constructor(mode: ElectropaintMode = "classic", compatibilityPolicy: CompatibilityPolicy = "corrected") {
     this.mode = mode;
@@ -368,13 +369,21 @@ export class ElectropaintEngine {
   }
 
   setReconstruction(profile: ReconstructionProfile | undefined): void {
-    this.reconstruction = profile === IAMRALPHT_PROFILE
-      ? new IamralphtReconstruction()
-      : null;
+    if (profile === IAMRALPHT_PROFILE) this.reconstruction = new IamralphtReconstruction();
+    else if (profile === MELLO_PROFILE) this.reconstruction = new MelloReconstruction();
+    else this.reconstruction = null;
   }
 
   get reconstructionProfile(): ReconstructionProfile | null {
-    return this.reconstruction ? IAMRALPHT_PROFILE : null;
+    if (this.reconstruction instanceof IamralphtReconstruction) return IAMRALPHT_PROFILE;
+    if (this.reconstruction instanceof MelloReconstruction) return MELLO_PROFILE;
+    return null;
+  }
+
+  toggle1994Look(): boolean | null {
+    return this.reconstruction instanceof MelloReconstruction
+      ? this.reconstruction.toggleShippedLook()
+      : null;
   }
 
   getControlValue(controlId: string): TimelineEventValue | undefined {

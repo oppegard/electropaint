@@ -18,6 +18,7 @@ import {
   CLASSIC_RECONSTRUCTION,
   iamralphtReconstructionForMode,
   IRIS_GT_RECONSTRUCTION,
+  melloReconstructionForMode,
 } from "../src/reconstructed";
 import { TimelineRecorder, runTimeline, validateTimeline } from "../src/timeline";
 import type { SliderControlDefinition } from "../src/types";
@@ -158,6 +159,8 @@ describe("TimelineV1", () => {
   it("preserves known reconstruction profiles and rejects unknown ones", () => {
     const timeline = iamralphtReconstructionForMode("classic");
     expect(validateTimeline(timeline)).toEqual({ ok: true, timeline });
+    const mello = melloReconstructionForMode();
+    expect(validateTimeline(mello)).toEqual({ ok: true, timeline: mello });
     expect(validateTimeline({
       ...timeline,
       metadata: { ...timeline.metadata, profile: "unknown-profile" },
@@ -196,7 +199,38 @@ describe("TimelineV1", () => {
     expect(new Set(frame.squares.map(({ fillColor }) => (
       `${fillColor.r},${fillColor.g},${fillColor.b}`
     ))).size).toBeGreaterThan(1);
-    expect(first.captureState().reconstruction?.wings).toHaveLength(40);
+    const reconstruction = first.captureState().reconstruction;
+    expect(reconstruction && "wings" in reconstruction ? reconstruction.wings : []).toHaveLength(40);
+  });
+
+  it("reconstructs the deterministic 1994 mello script", () => {
+    const timeline = melloReconstructionForMode();
+    const first = runTimeline(timeline, 720);
+    const second = runTimeline(timeline, 720);
+    expect(second.captureState()).toEqual(first.captureState());
+
+    const frame = first.renderData();
+    expect(frame.squares).toHaveLength(40);
+    expect(frame.camera).toEqual({ fovDegrees: 60, distance: 4, flipY: true });
+    expect(frame.squares.some(({ outline }) => outline)).toBe(true);
+    expect(new Set(frame.squares.map(({ fillColor }) => (
+      `${fillColor.r},${fillColor.g},${fillColor.b}`
+    ))).size).toBeGreaterThan(1);
+  });
+
+  it("toggles the 1994 look without restarting its script", () => {
+    const engine = runTimeline(melloReconstructionForMode(), 180);
+    const before = engine.captureState();
+    expect(engine.toggle1994Look()).toBe(false);
+    const after = engine.captureState();
+    expect(after).toEqual({
+      ...before,
+      reconstruction: before.reconstruction
+        ? { ...before.reconstruction, shippedLook: false }
+        : null,
+    });
+    expect(engine.renderData().squares).toHaveLength(160);
+    expect(engine.renderData().camera).toEqual({ fovDegrees: 30, distance: 10, flipY: false });
   });
 
   it("records and appends stable control IDs", () => {

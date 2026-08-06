@@ -1,6 +1,7 @@
 import { definitionById, stableControlIds } from "./controls";
 import { ElectropaintEngine, TICK_RATE } from "./engine";
 import { IAMRALPHT_PROFILE } from "./iamralpht";
+import { MELLO_PROFILE } from "./mello";
 import type {
   CompatibilityPolicy,
   ElectropaintMode,
@@ -64,7 +65,8 @@ export function validateTimeline(value: unknown): TimelineValidationResult {
 
   if (isRecord(value.metadata)
     && value.metadata.profile !== undefined
-    && value.metadata.profile !== IAMRALPHT_PROFILE) {
+    && value.metadata.profile !== IAMRALPHT_PROFILE
+    && value.metadata.profile !== MELLO_PROFILE) {
     return { ok: false, error: "Timeline reconstruction profile is unknown." };
   }
   const metadata = isRecord(value.metadata)
@@ -75,6 +77,8 @@ export function validateTimeline(value: unknown): TimelineValidationResult {
         : {}),
       ...(value.metadata.profile === IAMRALPHT_PROFILE
         ? { profile: IAMRALPHT_PROFILE }
+        : value.metadata.profile === MELLO_PROFILE
+          ? { profile: MELLO_PROFILE }
         : {}),
     }
     : undefined;

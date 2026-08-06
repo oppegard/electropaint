@@ -36,11 +36,19 @@ browser, not merely reproduce a similar animation. The port therefore aims to:
 - provide versioned JSON recording and replay with stable control IDs; and
 - remain a backend-free build that can be hosted on any static file host.
 
-The bundled autoplay sequences are clearly labeled reconstructions. They are
-not presented as recovered SGI screensaver scripts. A `source` compatibility
-mode preserves known source behavior, while `corrected` mode applies the one
-documented visual correction: restoring the omitted outline on the first
-mirrored shape.
+The default session is a deterministic reconstruction of the famous “mello”
+script in [Electropaint 1994 (OpenGL,
+decompiled)](https://sgi-demos.org/sgi-demos/demos/ep-1994-ogl-decomp/web/).
+It includes the script's smooth HLS color, randomized actuator timing, and
+128-shape transform history. Press `M` to switch between the shipped 1994
+camera/single-wing appearance and its restored OpenGL camera/four mirrored
+wings. As in the decompiled demo, this changes only the presentation; the
+script continues uninterrupted.
+
+The other bundled autoplay sequences are clearly labeled reconstructions. A
+`source` compatibility mode preserves known source behavior, while `corrected`
+mode applies the one documented visual correction: restoring the omitted
+outline on the first mirrored shape.
 
 The Session menu also includes a deterministic reconstruction of Ralph
 Thomas's 2013 [Elektropaint.js](https://github.com/iamralpht/elektropaintjs)
@@ -62,6 +70,10 @@ the numeric tests.
 
 Thanks also to the [sgi-demos/igl](https://github.com/sgi-demos/igl) archive for
 pointing the way to the surviving IGL material.
+
+The 1994 default-script session is based on the decompiled source maintained by
+the [sgi-demos project](https://github.com/sgi-demos/sgi-demos/tree/main/demos/ep-1994-ogl-decomp),
+with credit to drvink for the decompilation.
 
 Panel Library/Electropaint Copyright © 1986 David A. Tristram. Electropaint™ is
 a Registered U.S. Trademark of Tristram Visual.

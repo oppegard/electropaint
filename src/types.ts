@@ -1,7 +1,7 @@
 export type ElectropaintMode = "classic" | "iris-gt";
 export type CompatibilityPolicy = "corrected" | "source";
 export type SliderMode = "wrap" | "bounce";
-export type ReconstructionProfile = "iamralpht-elektropaintjs";
+export type ReconstructionProfile = "ep-1994-ogl-decomp" | "iamralpht-elektropaintjs";
 
 export interface ModulatedSliderState {
   value: number;
@@ -117,4 +117,9 @@ export interface RenderData {
   depth: boolean;
   lighting: boolean;
   ribbonMode: boolean;
+  camera?: {
+    fovDegrees: number;
+    distance: number;
+    flipY: boolean;
+  };
 }
