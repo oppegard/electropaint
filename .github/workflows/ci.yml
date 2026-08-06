@@ -1,7 +1,6 @@
 name: CI
 
 on:
-  push:
   pull_request:
   workflow_dispatch:
 
@@ -15,12 +14,6 @@ concurrency:
 jobs:
   test:
     name: Linux tests
-    # Same-repository branches already run this job on push. Keep the
-    # pull_request trigger for a visible check and for forks, but do not run
-    # the same commit twice when a local branch is opened as a PR.
-    if: >-
-      github.event_name != 'pull_request' ||
-      github.event.pull_request.head.repo.full_name != github.repository
     runs-on: ubuntu-24.04
     timeout-minutes: 10
 
