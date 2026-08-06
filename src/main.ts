@@ -1,7 +1,7 @@
 import "./styles.css";
 import { controlsForMode } from "./controls";
 import { ElectropaintEngine, TICK_RATE } from "./engine";
-import { reconstructionForMode } from "./reconstructed";
+import { iamralphtReconstructionForMode, reconstructionForMode } from "./reconstructed";
 import { ElectropaintRenderer } from "./renderer";
 import { TimelinePlayback, TimelineRecorder, validateTimeline } from "./timeline";
 import type {
@@ -23,7 +23,13 @@ app.innerHTML = `
       <h1>Electro<span>paint</span></h1>
       <p class="byline">by David A. Tristram · faithful browser reconstruction</p>
     </div>
-    <div class="edition-switcher" aria-label="Historical edition">
+    <div class="edition-switcher" aria-label="Session and historical edition">
+      <label for="session">Session</label>
+      <select id="session">
+        <option value="showcase">Source showcase</option>
+        <option value="elektropaintjs">Elektropaint.js screensaver</option>
+        <option value="custom" hidden>Imported / custom</option>
+      </select>
       <label for="mode">Edition</label>
       <select id="mode">
         <option value="classic">IRIS_4D · indexed</option>
@@ -62,7 +68,7 @@ app.innerHTML = `
       <p class="session-status" id="session-status" role="status"></p>
     </div>
 
-    <aside class="control-panel">
+    <aside class="control-panel" id="control-panel">
       <div class="panel-heading">
         <div>
           <p class="eyebrow">Panel</p>
@@ -86,6 +92,7 @@ app.innerHTML = `
     <p>Panel Library / Electropaint Copyright © 1986 David A. Tristram.</p>
     <p>Electropaint™ is a Registered U.S. Trademark of Tristram Visual.</p>
     <p>This browser edition is a source-led reconstruction. Its bundled autoplay timelines are new reconstructions, not recovered SGI screensaver scripts.</p>
+    <p>The Elektropaint.js session reconstructs Ralph Thomas's 2013 WebKit interpretation with deterministic random walks and native WebGL squares.</p>
     <p><a href="https://www.tristram.com/" rel="noreferrer">Tristram Visual</a></p>
   </dialog>
 `;
@@ -98,7 +105,9 @@ function required<T extends Element>(selector: string): T {
 
 const canvas = required<HTMLCanvasElement>("#electropaint");
 const stage = required<HTMLElement>("#stage");
+const controlPanel = required<HTMLElement>("#control-panel");
 const controlsRoot = required<HTMLElement>("#controls");
+const sessionSelect = required<HTMLSelectElement>("#session");
 const modeSelect = required<HTMLSelectElement>("#mode");
 const policySelect = required<HTMLSelectElement>("#policy");
 const sessionStatus = required<HTMLElement>("#session-status");
@@ -329,6 +338,7 @@ function handleControl(element: HTMLInputElement | HTMLSelectElement | HTMLButto
   if (playback.isPlaying) {
     playback.continueLive();
     playbackLabel.textContent = "Custom session";
+    sessionSelect.value = "custom";
   }
   syncControls();
 }
@@ -383,6 +393,7 @@ function applyPuck(x: number, y: number): void {
   if (playback.isPlaying) {
     playback.continueLive();
     playbackLabel.textContent = "Custom session";
+    sessionSelect.value = "custom";
   }
   renderRevision += 1;
   syncControls();
@@ -432,30 +443,65 @@ function startTimeline(timeline: TimelineV1, message?: string): void {
   renderRevision += 1;
   modeSelect.value = engine.mode;
   policySelect.value = engine.compatibilityPolicy;
-  playbackLabel.textContent = timeline.metadata?.reconstructed
-    ? "Reconstructed showcase"
-    : timeline.metadata?.title ?? "Imported timeline";
+  const isIamralpht = timeline.metadata?.profile === "iamralpht-elektropaintjs";
+  sessionSelect.value = isIamralpht
+    ? "elektropaintjs"
+    : timeline.metadata?.reconstructed ? "showcase" : "custom";
+  playbackLabel.textContent = isIamralpht
+    ? "Elektropaint.js reconstruction"
+    : timeline.metadata?.reconstructed
+      ? "Reconstructed showcase"
+      : timeline.metadata?.title ?? "Imported timeline";
   renderControls();
+  controlsRoot.inert = isIamralpht;
+  controlsRoot.setAttribute("aria-disabled", String(isIamralpht));
+  controlPanel.classList.toggle("session-locked", isIamralpht);
   setStatus(message ?? (reducedMotion
-    ? "Reduced motion is enabled; the reconstructed showcase is paused on its initial frame."
-    : "Playing a deterministic reconstructed showcase at 60 Hz."));
+    ? isIamralpht
+      ? "Reduced motion is enabled; Ralph Thomas’s Elektropaint.js reconstruction is paused on its initial frame."
+      : "Reduced motion is enabled; the reconstructed session is paused on its initial frame."
+    : isIamralpht
+      ? "Playing Ralph Thomas’s Elektropaint.js behavior as a deterministic reconstructed session. Choose Continue to return to live controls."
+      : "Playing a deterministic reconstructed showcase at 60 Hz."));
+}
+
+function selectedReconstruction(mode: ElectropaintMode): TimelineV1 {
+  const timeline = sessionSelect.value === "elektropaintjs"
+    ? iamralphtReconstructionForMode(mode)
+    : structuredClone(reconstructionForMode(mode));
+  timeline.compatibilityPolicy = policySelect.value as CompatibilityPolicy;
+  return timeline;
 }
 
 function switchMode(mode: ElectropaintMode): void {
-  const timeline = structuredClone(reconstructionForMode(mode));
-  timeline.compatibilityPolicy = policySelect.value as CompatibilityPolicy;
+  const timeline = selectedReconstruction(mode);
   startTimeline(timeline);
 }
 
+sessionSelect.addEventListener("change", () => switchMode(modeSelect.value as ElectropaintMode));
 modeSelect.addEventListener("change", () => switchMode(modeSelect.value as ElectropaintMode));
 policySelect.addEventListener("change", () => {
   const policy = policySelect.value as CompatibilityPolicy;
-  const timeline = structuredClone(reconstructionForMode(engine.mode));
+  const timeline = selectedReconstruction(engine.mode);
   timeline.compatibilityPolicy = policy;
   startTimeline(timeline, `Restarted ${engine.mode} in ${policy} compatibility mode.`);
 });
 
+function releaseReconstructionForLiveControls(): boolean {
+  if (!engine.reconstructionProfile) return false;
+  playback.continueLive();
+  engine.reset(modeSelect.value as ElectropaintMode, policySelect.value as CompatibilityPolicy);
+  sessionSelect.value = "custom";
+  controlsRoot.inert = false;
+  controlsRoot.setAttribute("aria-disabled", "false");
+  controlPanel.classList.remove("session-locked");
+  renderControls();
+  renderRevision += 1;
+  return true;
+}
+
 required<HTMLButtonElement>("#record").addEventListener("click", () => {
+  releaseReconstructionForLiveControls();
   playback.continueLive();
   motionPaused = false;
   recorder.start(engine.tick, false);
@@ -465,6 +511,7 @@ required<HTMLButtonElement>("#record").addEventListener("click", () => {
 });
 
 required<HTMLButtonElement>("#append").addEventListener("click", () => {
+  releaseReconstructionForLiveControls();
   playback.continueLive();
   motionPaused = false;
   recorder.start(engine.tick, true);
@@ -489,12 +536,15 @@ required<HTMLButtonElement>("#replay").addEventListener("click", () => {
 });
 
 required<HTMLButtonElement>("#continue").addEventListener("click", () => {
+  const restarted = releaseReconstructionForLiveControls();
   playback.continueLive();
   engine.apply("stop", false);
   renderRevision += 1;
   motionPaused = false;
   playbackLabel.textContent = "Live controls";
-  setStatus("Timeline playback released; simulation is continuing from the current state.");
+  setStatus(restarted
+    ? "The prerecorded reconstruction ended; live controls restarted from the selected edition’s defaults."
+    : "Timeline playback released; simulation is continuing from the current state.");
   syncControls();
 });
 
@@ -555,6 +605,7 @@ document.addEventListener("keydown", (event) => {
     else void stage.requestFullscreen();
     return;
   }
+  if (engine.reconstructionProfile) return;
   const definition = controlsForMode(engine.mode).find(
     (candidate) => candidate.kind === "toggle" && candidate.shortcut === event.key.toLowerCase(),
   );
@@ -566,6 +617,7 @@ document.addEventListener("keydown", (event) => {
   recorder.capture(engine.tick, definition.id, value);
   if (playback.isPlaying) playback.continueLive();
   playbackLabel.textContent = "Custom session";
+  sessionSelect.value = "custom";
   syncControls();
 });
 

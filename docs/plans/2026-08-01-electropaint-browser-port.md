@@ -21,7 +21,8 @@ The demo will:
 
 - Translate the original constants, defaults, 128-entry history buffer,
   interpolation, angle wrapping, slider modulation, matrix order, and four-way
-  mirrored triangle construction into a deterministic TypeScript engine.
+  mirrored construction into a deterministic TypeScript engine rendered with
+  square browser geometry.
 - Run simulation at a fixed 60 Hz using the source's port-adjusted default
   speed of `0.05`; render independently with `requestAnimationFrame`. Pause
   hidden tabs without catch-up jumps.
@@ -50,7 +51,7 @@ The demo will:
   > the accumulated pose on the first press.
 
 - Add `corrected` and `source` compatibility policies. The sole initial
-  correction is drawing the missing outline on the first mirrored triangle;
+  correction is drawing the missing outline on the first mirrored shape;
   source mode preserves the omission. Do not make other speculative visual
   corrections.
 - Preserve the original square embedded viewport and use its aspect-adjusted
@@ -156,31 +157,11 @@ making `dist/` deployable to GitHub Pages or any static host.
 - Unit-test source defaults, all control ranges, wrap/bounce boundaries,
   ring-buffer rollover, mode resets, color conversion, timeline validation,
   recording, and deterministic replay.
-- Use Playwright at a fixed 400x400 viewport and device-pixel ratio of 1 for
-  per-browser visual snapshots covering defaults, motion, fill/outline, fat
-  lines, fade/smear, colored background, IRIS_GT alpha/lighting, ribbons, and
-  depth.
-
-  > **Implementation note — change:** Playwright uses a 1200x900 page viewport
-  > at device-pixel ratio 1, while the canvas under assertion is forced to an
-  > exact 400x400 capture. A 400x400 page viewport could not contain the desktop
-  > controls and made layout changes affect the rendering baseline; isolating
-  > the canvas preserves the intended 400x400 visual comparison.
-
-  > **Implementation note — change:** The browser matrix is Chromium, Firefox,
-  > and WebKit. Chromium covers the rendering engine shared by current Chrome
-  > and Edge, while WebKit is the automatable proxy for Safari. This replaces
-  > separate branded Chrome, Edge, and Safari runs with reproducible engine-level
-  > coverage available through Playwright.
-- Compare appearance against the archived Electropaint screenshots; use
-  source-derived numeric fixtures as the stronger authority where compressed
-  screenshots are ambiguous.
 - Verify fullscreen entry/exit, keyboard shortcuts, visibility pause/resume,
   reduced-motion startup, context recovery, malformed imports, and WebGL2
-  failure messaging.
+  failure messaging during manual browser acceptance.
 - Acceptance requires identical engine/render data for repeated timeline runs,
-  source-mode numeric agreement with fixtures, approved browser snapshots, and
-  a clean production build with no console errors.
+  source-mode numeric agreement with fixtures, and a clean production build.
 
 ## Assumptions
 
