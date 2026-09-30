@@ -44,27 +44,26 @@ jobs:
           if [[ "$GITHUB_EVENT_NAME" == push && "$GITHUB_REF" == refs/heads/main ]]; then
             label='-latest'
           fi
-          artifact_name="electropaint-macos${label}-${short_sha}"
+          artifact_name="electropaint-macos${label}-${short_sha}.zip"
           package_path="macos/build/packages/$artifact_name"
-          mkdir -p "$package_path"
-          ditto -c -k --sequesterRsrc --keepParent \
-            macos/build/Electropaint.saver "$package_path/Electropaint.saver${label}-${short_sha}.zip"
-          ditto -c -k --sequesterRsrc --keepParent \
-            'macos/build/Electropaint Preview.app' "$package_path/Electropaint-Preview.app${label}-${short_sha}.zip"
+          staging_path="macos/build/package-contents"
+          mkdir -p "$staging_path" macos/build/packages
+          ditto macos/build/Electropaint.saver "$staging_path/Electropaint.saver"
+          ditto 'macos/build/Electropaint Preview.app' "$staging_path/Electropaint Preview.app"
+          ditto -c -k --sequesterRsrc "$staging_path" "$package_path"
           {
             echo "source_sha=$source_sha"
             echo "artifact_name=$artifact_name"
             echo "package_path=$package_path"
           } >> "$GITHUB_OUTPUT"
-          cd "$package_path"
-          shasum -a 256 ./*.zip > SHA256SUMS.txt
 
       - name: Upload macOS artifacts
         id: upload
         uses: actions/upload-artifact@v7
         with:
           name: ${{ steps.package.outputs.artifact_name }}
-          path: ${{ steps.package.outputs.package_path }}/*
+          path: ${{ steps.package.outputs.package_path }}
+          archive: false
           if-no-files-found: error
           retention-days: 14
 
@@ -106,7 +105,7 @@ jobs:
               marker,
               '### Download macOS build',
               '',
-              `[Download screensaver, preview app, and checksums](${process.env.ARTIFACT_URL})`,
+              `[Download screensaver and preview app](${process.env.ARTIFACT_URL})`,
               '',
               `Built from commit \`${process.env.SOURCE_SHA}\`.`,
               'Requires GitHub sign-in. This artifact expires 14 days after upload.',
@@ -151,10 +150,10 @@ jobs:
           name: ${{ needs.build.outputs.artifact_name }}
           path: release
 
-      - name: Verify packaged checksums
+      - name: Generate release checksum
         if: steps.merge.outputs.merged == 'true'
         working-directory: release
-        run: sha256sum --check SHA256SUMS.txt
+        run: sha256sum ./*.zip > SHA256SUMS.txt
 
       - name: Create or update latest prerelease
         if: steps.merge.outputs.merged == 'true'
@@ -168,8 +167,8 @@ jobs:
           Native macOS Electropaint running the original 1994 default script, with no customization.
 
           Universal Apple Silicon and Intel bundles for macOS 11 or later.
-          Download and extract Electropaint.saver-latest-$short_sha.zip, then double-click Electropaint.saver to install.
-          Electropaint-Preview.app-latest-$short_sha.zip contains the standalone preview application.
+          Download and extract electropaint-macos-latest-$short_sha.zip.
+          Double-click Electropaint.saver to install, or open Electropaint Preview.app.
 
           These builds are ad-hoc signed, not Developer ID signed or notarized.
           CPU sanitizer checks and bundle compilation passed; system-host and visual checks remain manual.
@@ -186,7 +185,7 @@ jobs:
             gh release edit latest --repo "$GH_REPO" --title latest \
               --prerelease --latest=false --notes-file release-notes.md
             while IFS= read -r asset; do
-              if [[ "$asset" =~ ^Electropaint(\.saver|-Preview\.app)-latest-[0-9a-f]{7}\.zip$ ]] &&
+              if [[ "$asset" =~ ^(electropaint-macos|Electropaint(\.saver|-Preview\.app))-latest-[0-9a-f]{7}\.zip$ ]] &&
                  [[ ! -f "release/$asset" ]]; then
                 gh release delete-asset latest "$asset" --repo "$GH_REPO" --yes
               fi

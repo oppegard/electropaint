@@ -201,3 +201,6 @@ prerelease replacement to retain the rolling release's existing behavior.
 PR builds now explicitly check out the PR head commit, rather than GitHub's
 synthetic test merge. The filename and download comment identify that single
 actual build SHA.
+
+- [x] Package both bundles in one ZIP and upload without an additional
+  archive wrapper, preserving executable permissions.

@@ -96,19 +96,21 @@ and is not linked into the screensaver or preview app.
 GitHub Actions builds universal bundles on pull requests and pushes to `main`.
 Updates to `main` after merging a PR update the
 [`latest` prerelease](https://github.com/oppegard/electropaint/releases/tag/latest)
-with screensaver/preview ZIPs and SHA-256 checksums. The rolling tag follows the source commit of the
+with one ZIP containing the screensaver and preview app and SHA-256 checksums. The rolling tag follows the source commit of the
 last successful publishing run; release notes link to that exact source.
 Pull requests upload workflow artifacts without changing the prerelease.
 For PRs from this repository, a bot maintains a download comment linking to
 the latest successful build for the current commit. Artifacts expire after
 14 days and require GitHub sign-in. Fork PRs retain the run-summary download
 link; their read-only tokens cannot post the comment.
-PR downloads use names such as `Electropaint.saver-abc1234.zip` and
-`Electropaint-Preview.app-abc1234.zip`. The enclosing Actions artifact is
-`electropaint-macos-abc1234`. The SHA identifies the checked-out build commit
-(the actual PR head commit for PRs). Published prerelease files include
-`latest`, for example `Electropaint.saver-latest-abc1234.zip`. After a successful
-prerelease update, older generated `latest` ZIPs are removed from that release.
+PR downloads use names such as `electropaint-macos-abc1234.zip`. Extracting
+this single ZIP reveals `Electropaint.saver` and `Electropaint Preview.app`
+directly, with their executable permissions preserved. The SHA identifies the
+checked-out build commit (the actual PR head commit for PRs). Published
+prerelease downloads include `latest`, for example
+`electropaint-macos-latest-abc1234.zip`, alongside a SHA-256 checksum file.
+After a successful prerelease update, older generated `latest` ZIPs are removed
+from that release.
 Publishing verifies that the main commit belongs to a merged PR; direct
 pushes to main build artifacts but do not update the prerelease.
 Hosted builds use `bash macos/test.sh --engine-only` because GPU/OpenGL access
