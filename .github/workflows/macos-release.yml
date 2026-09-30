@@ -26,6 +26,7 @@ jobs:
       - name: Check out source
         uses: actions/checkout@v6
         with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
           persist-credentials: false
 
       - name: Run CPU sanitizer checks
@@ -107,7 +108,7 @@ jobs:
               '',
               `[Download screensaver, preview app, and checksums](${process.env.ARTIFACT_URL})`,
               '',
-              `Built from commit \`${process.env.SOURCE_SHA}\` for PR commit \`${sha}\`.`,
+              `Built from commit \`${process.env.SOURCE_SHA}\`.`,
               'Requires GitHub sign-in. This artifact expires 14 days after upload.',
               'Builds are ad-hoc signed and are not notarized.',
             ].join('\n');

@@ -197,3 +197,7 @@ prerelease names. Propagate the artifact name between upload/download jobs,
 regenerate checksums and release notes, and identify the actual build SHA in
 the PR comment. Remove only older generated latest ZIPs after a successful
 prerelease replacement to retain the rolling release's existing behavior.
+
+PR builds now explicitly check out the PR head commit, rather than GitHub's
+synthetic test merge. The filename and download comment identify that single
+actual build SHA.

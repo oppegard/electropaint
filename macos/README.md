@@ -106,7 +106,7 @@ link; their read-only tokens cannot post the comment.
 PR downloads use names such as `Electropaint.saver-abc1234.zip` and
 `Electropaint-Preview.app-abc1234.zip`. The enclosing Actions artifact is
 `electropaint-macos-abc1234`. The SHA identifies the checked-out build commit
-(GitHub's test merge commit for PRs). Published prerelease files include
+(the actual PR head commit for PRs). Published prerelease files include
 `latest`, for example `Electropaint.saver-latest-abc1234.zip`. After a successful
 prerelease update, older generated `latest` ZIPs are removed from that release.
 Publishing verifies that the main commit belongs to a merged PR; direct
