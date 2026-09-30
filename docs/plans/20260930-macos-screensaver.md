@@ -143,10 +143,15 @@ Checklist:
 - [x] Add build/packaging/prerelease workflow and document its triggers.
 - [x] Validate with Actionlint, ShellCheck and local packaging checks.
 - [x] Commit and push the implementation and workflow.
-- [ ] Check the PR workflow run; publishing requires the user's merge to main.
+- [x] Check the PR workflow run; publishing requires the user's merge to main.
 
 The initial unsigned implementation commit was pushed with HTTPS/GitHub CLI
 authentication after the configured SSH/1Password signing agent failed.
 Git signing settings remain unchanged. Actionlint, ShellCheck, CPU sanitizer
 checks and ZIP/checksum packaging checks pass. The merged-PR publishing gate
 was checked against the existing PR #2 merge metadata.
+
+Draft PR #3's macOS build and Linux checks passed. The macOS workflow uploaded
+the saver/preview ZIPs and checksums as `electropaint-macos`, with 14-day
+retention. Its publish job was skipped as intended. No prerelease was created
+by the PR run; the first publication awaits a merge to main.
