@@ -1,0 +1,115 @@
+name: Build macOS prerelease
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: macos-prerelease-${{ github.event_name == 'pull_request' && github.ref || 'latest' }}
+  cancel-in-progress: false
+
+jobs:
+  build:
+    name: Build universal macOS bundles
+    runs-on: macos-15
+    timeout-minutes: 15
+    steps:
+      - name: Check out source
+        uses: actions/checkout@v6
+        with:
+          persist-credentials: false
+
+      - name: Run CPU sanitizer checks
+        run: bash macos/test.sh --engine-only
+
+      - name: Build screensaver and preview
+        run: bash macos/build.sh
+
+      - name: Package signed bundles
+        run: |
+          mkdir -p macos/build/release
+          ditto -c -k --sequesterRsrc --keepParent \
+            macos/build/Electropaint.saver macos/build/release/Electropaint.saver.zip
+          ditto -c -k --sequesterRsrc --keepParent \
+            'macos/build/Electropaint Preview.app' macos/build/release/Electropaint-Preview.app.zip
+          cd macos/build/release
+          shasum -a 256 Electropaint.saver.zip Electropaint-Preview.app.zip > SHA256SUMS.txt
+
+      - name: Upload macOS artifacts
+        uses: actions/upload-artifact@v7
+        with:
+          name: electropaint-macos
+          path: macos/build/release/*
+          if-no-files-found: error
+          retention-days: 14
+
+  publish:
+    name: Publish latest prerelease
+    needs: build
+    if: >-
+      github.event_name == 'push' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    permissions:
+      contents: write
+    steps:
+      - name: Confirm main was updated by a merged PR
+        id: merge
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+          SOURCE_SHA: ${{ github.sha }}
+        run: |
+          merged=$(gh api "repos/$GH_REPO/commits/$SOURCE_SHA/pulls" |
+            jq --arg sha "$SOURCE_SHA" \
+              'any(.[]; .merged_at != null and .base.ref == "main" and .merge_commit_sha == $sha)')
+          echo "merged=$merged" >> "$GITHUB_OUTPUT"
+
+      - name: Download macOS artifacts
+        if: steps.merge.outputs.merged == 'true'
+        uses: actions/download-artifact@v8
+        with:
+          name: electropaint-macos
+          path: release
+
+      - name: Verify packaged checksums
+        if: steps.merge.outputs.merged == 'true'
+        working-directory: release
+        run: sha256sum --check SHA256SUMS.txt
+
+      - name: Create or update latest prerelease
+        if: steps.merge.outputs.merged == 'true'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+          SOURCE_SHA: ${{ github.sha }}
+        run: |
+          cat > release-notes.md <<EOF
+          Native macOS Electropaint running the original 1994 default script, with no customization.
+
+          Universal Apple Silicon and Intel bundles for macOS 11 or later.
+          Download and extract Electropaint.saver.zip, then double-click Electropaint.saver to install.
+          Electropaint-Preview.app.zip contains the standalone preview application.
+
+          These builds are ad-hoc signed, not Developer ID signed or notarized.
+          CPU sanitizer checks and bundle compilation passed; system-host and visual checks remain manual.
+
+          Source commit: $SOURCE_SHA
+          [Source and licensing](https://github.com/$GH_REPO/tree/$SOURCE_SHA/macos)
+          [Installation instructions](https://github.com/$GH_REPO/blob/$SOURCE_SHA/macos/README.md)
+          EOF
+          if gh release view latest --repo "$GH_REPO" >/dev/null 2>&1; then
+            gh release upload latest release/* --repo "$GH_REPO" --clobber
+            gh api --method PATCH "repos/$GH_REPO/git/refs/tags/latest" \
+              -f sha="$SOURCE_SHA" -F force=true
+            gh release edit latest --repo "$GH_REPO" --title latest \
+              --prerelease --latest=false --notes-file release-notes.md
+          else
+            gh release create latest release/* --repo "$GH_REPO" --title latest \
+              --target "$SOURCE_SHA" --prerelease --latest=false --notes-file release-notes.md
+          fi

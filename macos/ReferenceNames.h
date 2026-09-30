@@ -1,0 +1,17 @@
+#define init_ep reference_init
+#define display__Gv reference_display
+#define reshape__GiT1 reference_reshape
+#define oflag reference_oflag
+#define bflag reference_bflag
+#define ep_gluPerspective reference_perspective
+#define wrap_glClear reference_clear
+#define wrap_glColor4f reference_color
+#define wrap_glPushMatrix reference_push
+#define wrap_glPopMatrix reference_pop
+#define wrap_glRotatef reference_rotate
+#define wrap_glTranslatef reference_translate
+#define wrap_glScalef reference_scale
+#define wrap_glBegin reference_begin
+#define wrap_glVertex2f reference_vertex
+#define wrap_glEnd reference_end
+#define wrap_glFinish reference_finish
