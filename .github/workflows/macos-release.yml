@@ -1,0 +1,196 @@
+name: Build macOS prerelease
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: macos-prerelease-${{ github.event_name == 'pull_request' && github.ref || 'latest' }}
+  cancel-in-progress: false
+
+jobs:
+  build:
+    name: Build universal macOS bundles
+    runs-on: macos-15
+    timeout-minutes: 15
+    outputs:
+      artifact_url: ${{ steps.upload.outputs.artifact-url }}
+      artifact_name: ${{ steps.package.outputs.artifact_name }}
+      source_sha: ${{ steps.package.outputs.source_sha }}
+    steps:
+      - name: Check out source
+        uses: actions/checkout@v6
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+          persist-credentials: false
+
+      - name: Run CPU sanitizer checks
+        run: bash macos/test.sh --engine-only
+
+      - name: Build screensaver and preview
+        run: bash macos/build.sh
+
+      - name: Package signed bundles
+        id: package
+        run: |
+          source_sha=$(git rev-parse HEAD)
+          short_sha=${source_sha:0:7}
+          label=''
+          if [[ "$GITHUB_EVENT_NAME" == push && "$GITHUB_REF" == refs/heads/main ]]; then
+            label='-latest'
+          fi
+          artifact_name="electropaint-macos${label}-${short_sha}.zip"
+          package_path="macos/build/packages/$artifact_name"
+          staging_path="macos/build/package-contents"
+          mkdir -p "$staging_path" macos/build/packages
+          ditto macos/build/Electropaint.saver "$staging_path/Electropaint.saver"
+          ditto 'macos/build/Electropaint Preview.app' "$staging_path/Electropaint Preview.app"
+          ditto -c -k --sequesterRsrc "$staging_path" "$package_path"
+          {
+            echo "source_sha=$source_sha"
+            echo "artifact_name=$artifact_name"
+            echo "package_path=$package_path"
+          } >> "$GITHUB_OUTPUT"
+
+      - name: Upload macOS artifacts
+        id: upload
+        uses: actions/upload-artifact@v7
+        with:
+          name: ${{ steps.package.outputs.artifact_name }}
+          path: ${{ steps.package.outputs.package_path }}
+          archive: false
+          if-no-files-found: error
+          retention-days: 14
+
+      - name: Add download link to run summary
+        env:
+          ARTIFACT_URL: ${{ steps.upload.outputs.artifact-url }}
+        run: |
+          printf '[Download macOS build](%s) — expires after 14 days; GitHub sign-in required.\n' \
+            "$ARTIFACT_URL" >> "$GITHUB_STEP_SUMMARY"
+
+  pr-download:
+    name: Link macOS build in PR
+    needs: build
+    if: >-
+      github.event_name == 'pull_request' &&
+      github.event.pull_request.head.repo.full_name == github.repository
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    permissions:
+      pull-requests: write
+    steps:
+      - name: Create or update download comment
+        uses: actions/github-script@v9
+        env:
+          ARTIFACT_URL: ${{ needs.build.outputs.artifact_url }}
+          SOURCE_SHA: ${{ needs.build.outputs.source_sha }}
+        with:
+          script: |
+            const { owner, repo } = context.repo;
+            const issue_number = context.payload.pull_request.number;
+            const sha = context.payload.pull_request.head.sha;
+            const { data: pr } = await github.rest.pulls.get({ owner, repo, pull_number: issue_number });
+            if (pr.state !== 'open' || pr.head.sha !== sha) {
+              core.info('Skipping download comment for an outdated or closed PR.');
+              return;
+            }
+            const marker = '<!-- electropaint-macos-download -->';
+            const body = [
+              marker,
+              '### Download macOS build',
+              '',
+              `[Download screensaver and preview app](${process.env.ARTIFACT_URL})`,
+              '',
+              `Built from commit \`${process.env.SOURCE_SHA}\`.`,
+              'Requires GitHub sign-in. This artifact expires 14 days after upload.',
+              'Builds are ad-hoc signed and are not notarized.',
+            ].join('\n');
+            const comments = await github.paginate(github.rest.issues.listComments,
+              { owner, repo, issue_number, per_page: 100 });
+            const existing = comments.find(comment =>
+              comment.user?.login === 'github-actions[bot]' && comment.body?.includes(marker));
+            if (existing) {
+              await github.rest.issues.updateComment({ owner, repo, comment_id: existing.id, body });
+            } else {
+              await github.rest.issues.createComment({ owner, repo, issue_number, body });
+            }
+
+  publish:
+    name: Publish latest prerelease
+    needs: build
+    if: >-
+      github.event_name == 'push' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    permissions:
+      contents: write
+    steps:
+      - name: Confirm main was updated by a merged PR
+        id: merge
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+          SOURCE_SHA: ${{ github.sha }}
+        run: |
+          merged=$(gh api "repos/$GH_REPO/commits/$SOURCE_SHA/pulls" |
+            jq --arg sha "$SOURCE_SHA" \
+              'any(.[]; .merged_at != null and .base.ref == "main" and .merge_commit_sha == $sha)')
+          echo "merged=$merged" >> "$GITHUB_OUTPUT"
+
+      - name: Download macOS artifacts
+        if: steps.merge.outputs.merged == 'true'
+        uses: actions/download-artifact@v8
+        with:
+          name: ${{ needs.build.outputs.artifact_name }}
+          path: release
+
+      - name: Generate release checksum
+        if: steps.merge.outputs.merged == 'true'
+        working-directory: release
+        run: sha256sum ./*.zip > SHA256SUMS.txt
+
+      - name: Create or update latest prerelease
+        if: steps.merge.outputs.merged == 'true'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+          SOURCE_SHA: ${{ github.sha }}
+        run: |
+          short_sha=${SOURCE_SHA:0:7}
+          cat > release-notes.md <<EOF
+          Native macOS Electropaint running the original 1994 default script, with no customization.
+
+          Universal Apple Silicon and Intel bundles for macOS 11 or later.
+          Download and extract electropaint-macos-latest-$short_sha.zip.
+          Double-click Electropaint.saver to install, or open Electropaint Preview.app.
+
+          These builds are ad-hoc signed, not Developer ID signed or notarized.
+          CPU sanitizer checks and bundle compilation passed; system-host and visual checks remain manual.
+
+          Source commit: $SOURCE_SHA
+          [Source and licensing](https://github.com/$GH_REPO/tree/$SOURCE_SHA/macos)
+          [Installation instructions](https://github.com/$GH_REPO/blob/$SOURCE_SHA/macos/README.md)
+          EOF
+          if gh release view latest --repo "$GH_REPO" >/dev/null 2>&1; then
+            gh release view latest --repo "$GH_REPO" --json assets --jq '.assets[].name' > previous-assets.txt
+            gh release upload latest release/* --repo "$GH_REPO" --clobber
+            gh api --method PATCH "repos/$GH_REPO/git/refs/tags/latest" \
+              -f sha="$SOURCE_SHA" -F force=true
+            gh release edit latest --repo "$GH_REPO" --title latest \
+              --prerelease --latest=false --notes-file release-notes.md
+            while IFS= read -r asset; do
+              if [[ "$asset" =~ ^(electropaint-macos|Electropaint(\.saver|-Preview\.app))-latest-[0-9a-f]{7}\.zip$ ]] &&
+                 [[ ! -f "release/$asset" ]]; then
+                gh release delete-asset latest "$asset" --repo "$GH_REPO" --yes
+              fi
+            done < previous-assets.txt
+          else
+            gh release create latest release/* --repo "$GH_REPO" --title latest \
+              --target "$SOURCE_SHA" --prerelease --latest=false --notes-file release-notes.md
+          fi

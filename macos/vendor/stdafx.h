@@ -1,0 +1,1 @@
+/* No platform precompiled header is needed. */

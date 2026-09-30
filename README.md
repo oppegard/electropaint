@@ -87,6 +87,9 @@ material remains subject to its original notices and
 
 ## Development
 
+The native macOS screensaver runs the preserved 1994 C default script with
+Metal rendering and no settings. See [build and installation instructions](macos/README.md).
+
 ```sh
 npm install
 npm run dev

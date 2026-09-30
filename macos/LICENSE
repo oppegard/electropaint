@@ -1,0 +1,139 @@
+Electropaint for macOS — licensing notices
+=========================================
+
+This file records the existing licensing terms for the macOS implementation.
+It does not grant additional rights or replace the preserved source notices.
+The complete screensaver must not be described as wholly GPL-licensed.
+
+Project-authored code
+---------------------
+
+The native adapter, Metal renderer, screensaver host, preview application,
+build scripts, and tests are provided under the repository's GNU General
+Public License, version 2 only (GPL-2.0-only). The complete license text is
+in ../LICENSE in the source repository and GPL-2.0.txt in each built bundle's
+Contents/Resources directory.
+
+Historical Electropaint source
+------------------------------
+
+vendor/ep.c and vendor/ep.h are preserved from bslabs/electroportis at commit
+8a8d165f28dc267491fd0bac0d2c5fae54e8587c. Both files carry David Tristram's
+ElectroPaint notice, reproduced below, and retain their original notices.
+They are not relicensed under the project's GPL. No ownership, trademark,
+commercial-use, or redistribution permission beyond the upstream terms is
+claimed here.
+
+Source: https://github.com/bslabs/electroportis/tree/8a8d165f28dc267491fd0bac0d2c5fae54e8587c
+
+This file is part of a decompilation of ElectroPaint, a work by David
+Tristram, distributed with permission. ElectroPaint is a US trademark owned
+by Tristram Visual, a sole proprietorship operating in California. Inquiries
+may be directed to info@tristram.com and www.tristram.com.
+
+Some further clarification from an email conversation with David Tristram:
+
+"The implication regarding derived works is simply that any code that you may
+produce that includes any part of ElectroPaint does not belong to you, so you
+can't sell it, for example, or if you do, I'd have a legal interest in the
+proceeds. If you are interested in modifying the program's behavior or
+appearance, I think that's okay as long as you share the modified source with
+me. All this includes decompiled source recovered from the binaries."
+
+Scope and distribution
+----------------------
+
+The upstream custom terms and the project's GPL are separate notices;
+preserving both does not establish that distributing a combined executable
+satisfies both. The quoted ownership, sale, and source-sharing statements
+require clarification from the rights holder before claiming GPL-compatible
+redistribution rights for the combined program. This file does not assert
+that such clarification or permission has been obtained.
+
+Each built bundle includes this file, the complete GPL text as GPL-2.0.txt,
+and the unchanged upstream notice as LICENSE.md. Matching source and build
+instructions are available in the repository's macos directory. Release
+notes link to the exact source commit used for each build.
+
+Complete upstream licensing notice (verbatim)
+--------------------------------------------
+
+The following is vendor/LICENSE.md unchanged. Its references to other
+upstream components are preserved for provenance; those components are not
+included in this macOS build. The direct notices in ep.c and ep.h are also
+preserved above and in their source files.
+
+ElectroPortis licensing
+=======================
+Different components of ElectroPortis are covered under different licenses;
+please take care before using code from this project.
+
+### {src/{ep,scripts}.c,include/scripts.h}
+
+These files are part of a decompilation of ElectroPaint, a work by David
+Tristram, distributed with permission.  ElectroPaint is a US trademark owned by
+Tristram Visual, a sole proprietorship operating in California.  Inquiries may
+be directed to info@tristram.com and www.tristram.com.
+
+Some further clarification from an email conversation with David Tristram:
+
+"The implication regarding derived works is simply that any code that you may
+produce that includes any part of ElectroPaint does not belong to you, so you
+can't sell it, for example, or if you do, I'd have a legal interest in the
+proceeds.  If you are interested in modifying the program's behavior or
+appearance, I think that's okay as long as you share the modified source with
+me.  All this includes decompiled source recovered from the binaries."
+
+### Other files under src/ and include/
+
+Copyright (C) 2014 Mark Laws
+
+Permission is hereby granted, free of charge, to any person obtaining a copy of
+this software and associated documentation files (the "Software"), to deal in
+the Software without restriction, including without limitation the rights to
+use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of
+the Software, and to permit persons to whom the Software is furnished to do so,
+subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS
+FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR
+COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER
+IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN
+CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+
+### ext/SHRWLocks/*
+
+Copyright (c) 2009 Valery Grebnev
+
+Covered by the Code Project Open License, available at:
+http://www.codeproject.com/info/cpol10.aspx
+
+The original source distribution is available at:
+
+http://www.codeproject.com/Articles/34190/Reader-writer-locks-with-a-helper
+
+### ext/rand48/*
+
+Copyright (c) 1993 Martin Birgmeier
+
+See the files for details.
+
+### ext/vs2012_math/*
+
+These files are not used in the program but are present to ease backporting to
+previous versions of Visual Studio, should someone wish to do so.  They were
+taken from FreeBSD, but as the FreeBSD maintainers neglected to place their own
+license text in them, the overarching FreeBSD license is assumed, which is
+available at:
+
+http://www.freebsd.org/copyright/freebsd-license.html
+
+### ext/wglext/*
+
+Copyright (c) 2013-2014 The Khronos Group Inc.
+
+See the files for details.
