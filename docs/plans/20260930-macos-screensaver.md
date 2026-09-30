@@ -188,3 +188,12 @@ Universal builds, signature checks, ShellCheck and whitespace checks pass.
 At the user's request, install the standard application menu with a
 `Quit Electropaint` item and Command-Q shortcut targeting NSApplication's
 termination action. The existing termination handler stops the timer and saver.
+
+## Build ZIP names
+
+At the user's request, suffix downloadable ZIPs and the Actions artifact name
+with the checked-out commit's seven-character SHA. Include `latest` in main
+prerelease names. Propagate the artifact name between upload/download jobs,
+regenerate checksums and release notes, and identify the actual build SHA in
+the PR comment. Remove only older generated latest ZIPs after a successful
+prerelease replacement to retain the rolling release's existing behavior.
