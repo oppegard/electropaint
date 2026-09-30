@@ -163,3 +163,11 @@ for the native code and preserve the custom historical notices verbatim.
 Both saver and preview bundles include it alongside the unchanged upstream
 notice and complete GPL text. This documents the existing terms; it does
 not resolve compatibility between the custom upstream terms and the GPL.
+
+## PR artifact download links
+
+At the user's request, expose the upload action's artifact URL in the run
+summary and a single maintained PR comment. Keep build permissions read-only;
+use a separate comment job with only PR write permission for same-repository
+PRs. Skip comments for outdated commits or closed PRs. Fork PRs retain the
+run-summary link. Retention remains 14 days, and downloads require sign-in.

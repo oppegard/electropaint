@@ -87,6 +87,10 @@ Updates to `main` after merging a PR update the
 with screensaver/preview ZIPs and SHA-256 checksums. The rolling tag follows the source commit of the
 last successful publishing run; release notes link to that exact source.
 Pull requests upload workflow artifacts without changing the prerelease.
+For PRs from this repository, a bot maintains a download comment linking to
+the latest successful build for the current commit. Artifacts expire after
+14 days and require GitHub sign-in. Fork PRs retain the run-summary download
+link; their read-only tokens cannot post the comment.
 Publishing verifies that the main commit belongs to a merged PR; direct
 pushes to main build artifacts but do not update the prerelease.
 Hosted builds use `bash macos/test.sh --engine-only` because GPU/OpenGL access
