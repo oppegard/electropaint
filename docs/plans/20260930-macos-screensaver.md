@@ -182,3 +182,9 @@ ad-hoc signed, unnotarized download. Do not change system security settings.
 Local validation: inspected the generated 1024-pixel icon, built all ten iconset
 sizes into ICNS, and verified the icon metadata and resource in both bundles.
 Universal builds, signature checks, ShellCheck and whitespace checks pass.
+
+## Preview app quit command
+
+At the user's request, install the standard application menu with a
+`Quit Electropaint` item and Command-Q shortcut targeting NSApplication's
+termination action. The existing termination handler stops the timer and saver.

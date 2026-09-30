@@ -37,6 +37,17 @@ int main(void) {
     @autoreleasepool {
         NSApplication *app = [NSApplication sharedApplication];
         app.activationPolicy = NSApplicationActivationPolicyRegular;
+        NSMenu *menuBar = [NSMenu new];
+        NSMenuItem *applicationItem = [NSMenuItem new];
+        NSMenu *applicationMenu = [[NSMenu alloc] initWithTitle:@"Electropaint"];
+        NSMenuItem *quitItem = [[NSMenuItem alloc] initWithTitle:@"Quit Electropaint"
+            action:@selector(terminate:) keyEquivalent:@"q"];
+        quitItem.keyEquivalentModifierMask = NSEventModifierFlagCommand;
+        quitItem.target = app;
+        [applicationMenu addItem:quitItem];
+        applicationItem.submenu = applicationMenu;
+        [menuBar addItem:applicationItem];
+        app.mainMenu = menuBar;
         PreviewDelegate *delegate = [PreviewDelegate new];
         app.delegate = delegate;
         [app run];
