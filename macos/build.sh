@@ -19,10 +19,12 @@ done
 xcrun lipo -create "$output/saver-arm64" "$output/saver-x86_64" \
     -output "$output/Electropaint.saver/Contents/MacOS/Electropaint"
 cp macos/Info.plist "$output/Electropaint.saver/Contents/Info.plist"
-cp macos/vendor/LICENSE.md LICENSE "$output/Electropaint.saver/Contents/Resources/"
+cp macos/vendor/LICENSE.md macos/LICENSE "$output/Electropaint.saver/Contents/Resources/"
+cp LICENSE "$output/Electropaint.saver/Contents/Resources/GPL-2.0.txt"
 mkdir -p "$output/Electropaint Preview.app/Contents/MacOS"
 mkdir -p "$output/Electropaint Preview.app/Contents/Resources"
-cp macos/vendor/LICENSE.md LICENSE "$output/Electropaint Preview.app/Contents/Resources/"
+cp macos/vendor/LICENSE.md macos/LICENSE "$output/Electropaint Preview.app/Contents/Resources/"
+cp LICENSE "$output/Electropaint Preview.app/Contents/Resources/GPL-2.0.txt"
 xcrun lipo -create "$output/preview-arm64" "$output/preview-x86_64" \
     -output "$output/Electropaint Preview.app/Contents/MacOS/Electropaint"
 cp macos/Info.plist "$output/Electropaint Preview.app/Contents/Info.plist"

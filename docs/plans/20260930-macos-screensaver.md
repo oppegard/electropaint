@@ -155,3 +155,11 @@ Draft PR #3's macOS build and Linux checks passed. The macOS workflow uploaded
 the saver/preview ZIPs and checksums as `electropaint-macos`, with 14-day
 retention. Its publish job was skipped as intended. No prerelease was created
 by the PR run; the first publication awaits a merge to main.
+
+## macOS license notice
+
+At the user's request, added `macos/LICENSE` to record GPL-2.0-only coverage
+for the native code and preserve the custom historical notices verbatim.
+Both saver and preview bundles include it alongside the unchanged upstream
+notice and complete GPL text. This documents the existing terms; it does
+not resolve compatibility between the custom upstream terms and the GPL.

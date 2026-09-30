@@ -99,10 +99,13 @@ sleep/wake and Intel execution require manual testing on the respective host.
 
 ## Licensing
 
-The historical decompilation has its own terms, preserved in
-[`vendor/LICENSE.md`](vendor/LICENSE.md) and its source notices, including
-David Tristram's statement about ownership, sale and sharing modified source.
-It is not relicensed under the browser implementation's GPL. Native adapter
-and host code are provided under the repository's GPL-2.0 terms. The build
-includes both notices in the screensaver bundle. No third-party runtime
-dependencies are added.
+[`LICENSE`](LICENSE) records the project code's GPL-2.0-only terms and preserves
+the historical source's custom notices. The unchanged upstream notice remains
+in [`vendor/LICENSE.md`](vendor/LICENSE.md). Both built bundles include the
+macOS notice as `LICENSE`, the upstream notice as `LICENSE.md`, and the full
+GPL text as `GPL-2.0.txt` in `Contents/Resources`.
+
+The historical code is not relicensed under the GPL. Its ownership, sale and
+source-sharing statements require clarification from the rights holder before
+claiming GPL-compatible redistribution rights for the combined executable;
+including license files alone does not resolve that issue.
