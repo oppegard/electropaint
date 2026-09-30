@@ -37,6 +37,31 @@ The screensaver pauses on stop and resumes on start. Each view owns its
 animation state; there is no customization sheet, alternate session, or key
 binding to change the animation.
 
+## Display refresh and playback speed
+
+Drawing follows the display through `CAMetalDisplayLink` on macOS 14 and
+later, requesting its reported maximum refresh rate, including 120 Hz
+ProMotion. macOS 11–13 uses `CVDisplayLink` for the window's current monitor.
+Both bundles share this driver; the demo has no separate animation timer.
+A 60 Hz timer is used only when there is no attached display or display-link
+setup fails. Window changes replace the driver; monitor changes update its refresh request.
+
+The script, random generator and history still advance at 60 steps per second.
+Extra presentations reuse the original source's interpolation of history,
+angles and HLS colors; the global wheel angle is interpolated with the same
+wrap rule. Fill and outline flags change at simulation boundaries. This works
+with fractional refresh rates and nonmultiples of 60, without speeding up the
+1994 sequence. A fixed one-step presentation buffer adds about 16.7 ms latency.
+Pause/resume preserves the buffered phase; long stalls discard elapsed time
+beyond eight simulation steps to keep catch-up bounded.
+
+Canonical drawing endpoints retain the existing source-oracle equivalence.
+Intermediate images are source-based interpolations, not historical frames
+that existed in the 1994 demo. The operating system controls actual callback
+frequency and may reduce it for power or visibility. Timing tests cover
+47.95, 48, 50, 59.94, 60, 75, 120, 144, 165 and 240 Hz; physical high-refresh
+presentation and macOS 11–13 runtime behavior still need hardware validation.
+
 ## Source fidelity
 
 The authority is the typed ElectroPortis decompilation, pinned to
@@ -54,8 +79,8 @@ The native graphics shim and empty platform header replace upstream's
 OpenGL-dependent headers. No changes to the preserved engine are required.
 
 The original harness advances one simulation frame per display invocation,
-without a fixed wall-clock rate. This version schedules at 60 Hz, with at most
-eight ticks after a delayed callback. It retains the binary's 300-degree GLU
+without a fixed wall-clock rate. This version advances simulation at 60 Hz,
+with at most eight ticks after a delayed callback. It retains the binary's 300-degree GLU
 projection (an inverted 60-degree view at distance four) and zero-size mirror
 copies, which are discarded before submitting Metal lines. Depth testing,
 culling, blending, and antialiasing remain disabled. OpenGL clip depth is
@@ -87,8 +112,11 @@ npm run build
 ```
 
 The engine test uses AddressSanitizer and UndefinedBehaviorSanitizer over
-12,000 frames with interleaved independent views, aspect changes, and repeated
-allocation/destruction. The independent reference test compiles the unchanged
+12,000 canonical frames and another 12,000 interpolated frame pairs. It checks
+exact endpoints, finite intermediate geometry, simulation/RNG purity,
+interleaved views, resizing and repeated allocation/destruction. Synthetic
+clock tests cover the refresh rates above, changing rates, reversed timestamps,
+pause/resume and bounded catch-up. The independent reference test compiles the unchanged
 engine with libc's RNG and native OpenGL matrices; it compares all ordered
 geometry and colors for 12,000 frames. OpenGL is used only by this test oracle,
 and is not linked into the screensaver or preview app.
@@ -117,7 +145,11 @@ Hosted builds use `bash macos/test.sh --engine-only` because GPU/OpenGL access
 is not guaranteed. The full reference and native smoke checks remain local.
 
 The bundle smoke test checks actual principal-class loading, Metal shader
-compilation, preview/full-size view initialization, resize and restart. System
+compilation, initial display callbacks, duplicate host-callback suppression,
+preview/full-size view initialization, resize, detach, stop/restart and release.
+When the display session is locked, macOS suppresses continuous Metal
+presentation; the test reports this and leaves continuous/resumed display
+callbacks for an unlocked session. Timer fallback callbacks are still checked. System
 Settings installation, lock-screen operation, multiple physical displays,
 sleep/wake and Intel execution require manual testing on the respective host.
 
