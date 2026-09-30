@@ -149,6 +149,7 @@ jobs:
         with:
           name: ${{ needs.build.outputs.artifact_name }}
           path: release
+          skip-decompress: true
 
       - name: Generate release checksum
         if: steps.merge.outputs.merged == 'true'
