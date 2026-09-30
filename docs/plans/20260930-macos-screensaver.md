@@ -171,3 +171,14 @@ summary and a single maintained PR comment. Keep build permissions read-only;
 use a separate comment job with only PR write permission for same-repository
 PRs. Skip comments for outdated commits or closed PRs. Fork PRs retain the
 run-summary link. Retention remains 14 days, and downloads require sign-in.
+
+## Icon and downloaded-build instructions
+
+At the user's request, add a reproducible neon square-spiral icon generated
+with AppKit, package a full-resolution `.icns` in both bundles, and set their
+bundle icon metadata. Document Apple's per-app Open Anyway flow for the
+ad-hoc signed, unnotarized download. Do not change system security settings.
+
+Local validation: inspected the generated 1024-pixel icon, built all ten iconset
+sizes into ICNS, and verified the icon metadata and resource in both bundles.
+Universal builds, signature checks, ShellCheck and whitespace checks pass.

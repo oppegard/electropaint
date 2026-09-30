@@ -19,6 +19,18 @@ select Electropaint in System Settings → Screen Saver. The build uses an
 ad-hoc signature for local use. It is not Developer ID signed or notarized;
 downloaded copies may require approval through macOS Privacy & Security.
 
+If macOS says Apple could not verify the downloaded build is free of malware,
+first attempt to open it, then go to System Settings → Privacy & Security,
+find the blocked-app notice and choose Open Anyway for the build you trust.
+See [Apple's instructions](https://support.apple.com/en-lamr/102445). This build
+does not disable Gatekeeper or remove quarantine attributes. Developer ID
+signing and notarization would avoid this warning for distributed builds.
+
+Both bundles include a neon square-spiral icon, generated from the checked-in
+`generate-icon.swift` drawing script at all standard macOS icon sizes.
+The preview app declares it as its app icon; the saver includes the same
+bundle-icon metadata, with presentation determined by macOS.
+
 The preview application runs the same ScreenSaverView and Metal renderer.
 Resizing its window changes the projection without restarting the script.
 The screensaver pauses on stop and resumes on start. Each view owns its

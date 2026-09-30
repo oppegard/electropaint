@@ -4,6 +4,8 @@ cd "$(dirname "$0")/.."
 output="$PWD/macos/build"
 mkdir -p "$output/Electropaint.saver/Contents/MacOS" "$output/Electropaint.saver/Contents/Resources"
 sdk=$(xcrun --sdk macosx --show-sdk-path)
+xcrun swift macos/generate-icon.swift "$output/Electropaint.iconset"
+iconutil -c icns "$output/Electropaint.iconset" -o "$output/Electropaint.icns"
 for arch in arm64 x86_64; do
     xcrun clang -arch "$arch" -isysroot "$sdk" -mmacosx-version-min=11.0 \
         -std=gnu11 -O2 -c macos/EPAdapter.c -o "$output/adapter-$arch.o"
@@ -21,10 +23,12 @@ xcrun lipo -create "$output/saver-arm64" "$output/saver-x86_64" \
 cp macos/Info.plist "$output/Electropaint.saver/Contents/Info.plist"
 cp macos/vendor/LICENSE.md macos/LICENSE "$output/Electropaint.saver/Contents/Resources/"
 cp LICENSE "$output/Electropaint.saver/Contents/Resources/GPL-2.0.txt"
+cp "$output/Electropaint.icns" "$output/Electropaint.saver/Contents/Resources/"
 mkdir -p "$output/Electropaint Preview.app/Contents/MacOS"
 mkdir -p "$output/Electropaint Preview.app/Contents/Resources"
 cp macos/vendor/LICENSE.md macos/LICENSE "$output/Electropaint Preview.app/Contents/Resources/"
 cp LICENSE "$output/Electropaint Preview.app/Contents/Resources/GPL-2.0.txt"
+cp "$output/Electropaint.icns" "$output/Electropaint Preview.app/Contents/Resources/"
 xcrun lipo -create "$output/preview-arm64" "$output/preview-x86_64" \
     -output "$output/Electropaint Preview.app/Contents/MacOS/Electropaint"
 cp macos/Info.plist "$output/Electropaint Preview.app/Contents/Info.plist"
