@@ -2,6 +2,7 @@
 #import "EPAdapter.h"
 #import <Metal/Metal.h>
 #import <QuartzCore/CAMetalLayer.h>
+#import <CoreGraphics/CoreGraphics.h>
 #include <time.h>
 
 @implementation ElectropaintView {
@@ -44,6 +45,7 @@
     _metalLayer.pixelFormat = MTLPixelFormatBGRA8Unorm;
     _metalLayer.framebufferOnly = YES;
     _metalLayer.opaque = YES;
+    _metalLayer.backgroundColor = CGColorGetConstantColor(kCGColorBlack);
     self.wantsLayer = YES;
     self.layer = _metalLayer;
     [self updateDrawableSize];
@@ -74,8 +76,19 @@
     _lastTime = 0;
     _accumulator = 0;
 }
+- (BOOL)shouldAnimateOnCurrentDisplay {
+    if (self.isPreview) return YES;
+    NSNumber *display = self.window.screen.deviceDescription[@"NSScreenNumber"];
+    return display != nil && display.unsignedIntValue == CGMainDisplayID();
+}
 - (void)animateOneFrame {
     if (!_pipeline || self.bounds.size.width <= 0 || self.bounds.size.height <= 0) return;
+    if (![self shouldAnimateOnCurrentDisplay]) {
+        _lastTime = 0;
+        _accumulator = 0;
+        [self renderFrame:NULL];
+        return;
+    }
     CFTimeInterval now = CACurrentMediaTime();
     _accumulator += _lastTime == 0 ? 1.0 / 60.0 : MIN(MAX(0, now - _lastTime), 8.0 / 60.0);
     _lastTime = now;
@@ -85,6 +98,9 @@
         _accumulator -= 1.0 / 60.0;
     }
     if (!frame) return;
+    [self renderFrame:frame];
+}
+- (void)renderFrame:(const EPFrame *)frame {
     id<CAMetalDrawable> drawable = [_metalLayer nextDrawable];
     if (!drawable) return;
     MTLRenderPassDescriptor *pass = [MTLRenderPassDescriptor renderPassDescriptor];
@@ -96,7 +112,7 @@
     id<MTLRenderCommandEncoder> encoder = [command renderCommandEncoderWithDescriptor:pass];
     [encoder setRenderPipelineState:_pipeline];
     [encoder setCullMode:MTLCullModeNone];
-    if (frame->vertexCount) {
+    if (frame && frame->vertexCount) {
         id<MTLBuffer> buffer = [_device newBufferWithBytes:frame->vertices
             length:frame->vertexCount * sizeof(EPVertex) options:MTLResourceStorageModeShared];
         [encoder setVertexBuffer:buffer offset:0 atIndex:0];
