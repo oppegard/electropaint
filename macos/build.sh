@@ -17,11 +17,11 @@ for arch in arm64 x86_64; do
         -std=gnu11 -O2 -c macos/EPAdapter.c -o "$output/adapter-$arch.o"
     xcrun clang -arch "$arch" -isysroot "$sdk" -mmacosx-version-min=11.0 \
         -fobjc-arc -O2 -Wall -Wextra -bundle macos/ElectropaintView.m "$output/adapter-$arch.o" \
-        -framework ScreenSaver -framework Cocoa -framework Metal -framework QuartzCore \
+        -framework ScreenSaver -framework Cocoa -framework Metal -framework QuartzCore -framework CoreVideo \
         -o "$output/saver-$arch"
     xcrun clang -arch "$arch" -isysroot "$sdk" -mmacosx-version-min=11.0 \
         -fobjc-arc -O2 -Wall -Wextra macos/Preview.m macos/ElectropaintView.m "$output/adapter-$arch.o" \
-        -framework ScreenSaver -framework Cocoa -framework Metal -framework QuartzCore \
+        -framework ScreenSaver -framework Cocoa -framework Metal -framework QuartzCore -framework CoreVideo \
         -o "$output/preview-$arch"
 done
 xcrun lipo -create "$output/saver-arm64" "$output/saver-x86_64" \

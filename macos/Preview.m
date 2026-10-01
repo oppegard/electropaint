@@ -23,7 +23,6 @@
 @interface PreviewDelegate : NSObject <NSApplicationDelegate>
 @property NSWindow *window;
 @property ElectropaintView *saver;
-@property NSTimer *timer;
 @end
 @implementation PreviewDelegate
 - (void)applicationDidFinishLaunching:(NSNotification *)notification {
@@ -44,16 +43,10 @@
     [self.window makeFirstResponder:self.saver];
     [NSApp activateIgnoringOtherApps:YES];
     [self.saver startAnimation];
-    __weak PreviewDelegate *weakSelf = self;
-    self.timer = [NSTimer timerWithTimeInterval:1.0/60.0 repeats:YES block:^(NSTimer *timer) {
-        (void)timer;
-        if (weakSelf.saver.isAnimating) [weakSelf.saver animateOneFrame];
-    }];
-    [[NSRunLoop mainRunLoop] addTimer:self.timer forMode:NSRunLoopCommonModes];
 }
 - (BOOL)applicationShouldTerminateAfterLastWindowClosed:(NSApplication *)sender { (void)sender; return YES; }
 - (void)applicationWillTerminate:(NSNotification *)notification {
-    (void)notification; [self.timer invalidate]; [self.saver stopAnimation];
+    (void)notification; [self.saver stopAnimation];
 }
 @end
 int main(void) {
