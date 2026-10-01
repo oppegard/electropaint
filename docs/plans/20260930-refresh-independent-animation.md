@@ -137,3 +137,19 @@ Sources:
   behavior in the downloaded artifact's preview app. This display cannot
   establish physical 120 Hz playback; higher-rate, macOS 11–13 and Intel
   hardware checks remain outstanding.
+
+## Merge-conflict repair — 2026-10-01
+
+- Integrate main's preview controls and primary-display screensaver restriction
+  without restoring its separate preview timer or replacing the refresh driver.
+- Apply display selection in the shared timestamp-rendering path. Secondary
+  and unresolved displays render black and pause the clock; previews remain
+  exempt. Preserve both suites of lifecycle and display-selection checks.
+- [x] Confirm PR conflict and inspect both branch histories.
+- [x] Resolve renderer, smoke-test and documentation conflicts.
+- [x] Verify universal build and combined native smoke checks.
+- [x] Commit and push the merge resolution.
+- Verification passed: universal arm64/x86_64 build, combined native lifecycle
+  and primary/secondary/unknown display tests, shellcheck, actionlint and
+  `git diff --check`. Controlled display tests use the fallback driver and
+  restore real screen objects before AppKit event processing.

@@ -5,6 +5,12 @@ script, rendered through Metal. It starts immediately and has no settings.
 Requires macOS 11 or later and a Metal-capable Mac. Both Apple Silicon and
 Intel slices are built; Intel execution still needs testing on Intel hardware.
 
+On extended displays, the screensaver animates only on the primary display
+selected in macOS Displays settings; all secondary displays show black.
+It follows changes to the primary display while running. Mirrored displays
+share the same content. System Settings previews and the preview app animate
+on any display, including when the preview app is full screen.
+
 ## Build and install
 
 Install Apple's Command Line Tools (`xcode-select --install`) if needed, then:
@@ -33,6 +39,11 @@ bundle-icon metadata, with presentation determined by macOS.
 
 The preview application runs the same ScreenSaverView and Metal renderer.
 Resizing its window changes the projection without restarting the script.
+Its title includes the build's seven-character Git commit hash in parentheses
+(`unknown` when built without Git metadata). Press Space to pause or resume
+from the current script position; holding Space toggles only once. Use
+Control-Command-F to enter or leave full screen, Command-W to close the window,
+and Command-Q to quit. Closing the last window also quits the preview app.
 The screensaver pauses on stop and resumes on start. Each view owns its
 animation state; there is no customization sheet, alternate session, or key
 binding to change the animation.
@@ -151,9 +162,13 @@ is not guaranteed. The full reference and native smoke checks remain local.
 The bundle smoke test checks actual principal-class loading, Metal shader
 compilation, initial display callbacks, duplicate host-callback suppression,
 preview/full-size view initialization, resize, detach, stop/restart and release.
-When the display session is locked, macOS suppresses continuous Metal
-presentation; the test reports this and leaves continuous/resumed display
-callbacks for an unlocked session. Timer fallback callbacks are still checked. System
+It also uses controlled display identities to check primary selection,
+secondary and unknown-display black rendering, transitions back to animation,
+and the preview exemption. These checks do not verify display identity
+reported by the actual macOS screensaver host. When the display session is
+locked, macOS suppresses continuous Metal presentation; the test reports this
+and leaves continuous/resumed display callbacks for an unlocked session.
+Timer fallback callbacks are still checked. System
 Settings installation, lock-screen operation, multiple physical displays,
 sleep/wake and Intel execution require manual testing on the respective host.
 

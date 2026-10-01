@@ -6,6 +6,7 @@
 #include <stdatomic.h>
 #import <Metal/Metal.h>
 #import <QuartzCore/CAMetalLayer.h>
+#import <CoreGraphics/CoreGraphics.h>
 #include <time.h>
 
 @interface EPDisplayRequests : NSObject {
@@ -70,6 +71,7 @@
     _metalLayer.pixelFormat = MTLPixelFormatBGRA8Unorm;
     _metalLayer.framebufferOnly = YES;
     _metalLayer.opaque = YES;
+    _metalLayer.backgroundColor = CGColorGetConstantColor(kCGColorBlack);
     self.wantsLayer = YES;
     self.layer = _metalLayer;
     [self updateDrawableSize];
@@ -193,6 +195,11 @@
     if (_running && link == _displayLink)
         [self renderAtTimestamp:update.targetPresentationTimestamp drawable:update.drawable];
 }
+- (BOOL)shouldAnimateOnCurrentDisplay {
+    if (self.isPreview) return YES;
+    NSNumber *display = self.window.screen.deviceDescription[@"NSScreenNumber"];
+    return display != nil && display.unsignedIntValue == CGMainDisplayID();
+}
 - (void)animateOneFrame {
     // ScreenSaver hosts may still call this while the display link owns drawing.
     if (!_running || _legacyLink || _fallbackTimer) return;
@@ -201,11 +208,17 @@
 }
 - (void)renderAtTimestamp:(CFTimeInterval)timestamp drawable:(id<CAMetalDrawable>)drawable {
     if (!_running || !_pipeline || self.bounds.size.width <= 0 || self.bounds.size.height <= 0) return;
-    int width = (int)_metalLayer.drawableSize.width, height = (int)_metalLayer.drawableSize.height;
-    if (!_primed) { ep_step(_engine, width, height); _primed = YES; }
-    EPClockUpdate update = ep_clock_advance(&_clock, timestamp);
-    for (unsigned i=0; i<update.steps; ++i) ep_step(_engine, width, height);
-    const EPFrame *frame = ep_render(_engine, width, height, update.fraction);
+    const EPFrame *frame = NULL;
+    if ([self shouldAnimateOnCurrentDisplay]) {
+        int width = (int)_metalLayer.drawableSize.width, height = (int)_metalLayer.drawableSize.height;
+        if (!_primed) { ep_step(_engine, width, height); _primed = YES; }
+        EPClockUpdate update = ep_clock_advance(&_clock, timestamp);
+        for (unsigned i=0; i<update.steps; ++i) ep_step(_engine, width, height);
+        frame = ep_render(_engine, width, height, update.fraction);
+    } else ep_clock_pause(&_clock);
+    [self renderFrame:frame drawable:drawable];
+}
+- (void)renderFrame:(const EPFrame *)frame drawable:(id<CAMetalDrawable>)drawable {
     BOOL displayLinkDrawable = drawable != nil;
     if (!drawable) drawable = [_metalLayer nextDrawable];
     if (!drawable) return;
@@ -218,7 +231,7 @@
     id<MTLRenderCommandEncoder> encoder = [command renderCommandEncoderWithDescriptor:pass];
     [encoder setRenderPipelineState:_pipeline];
     [encoder setCullMode:MTLCullModeNone];
-    if (frame->vertexCount) {
+    if (frame && frame->vertexCount) {
         id<MTLBuffer> buffer = [_device newBufferWithBytes:frame->vertices
             length:frame->vertexCount * sizeof(EPVertex) options:MTLResourceStorageModeShared];
         [encoder setVertexBuffer:buffer offset:0 atIndex:0];
