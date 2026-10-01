@@ -5,6 +5,12 @@ script, rendered through Metal. It starts immediately and has no settings.
 Requires macOS 11 or later and a Metal-capable Mac. Both Apple Silicon and
 Intel slices are built; Intel execution still needs testing on Intel hardware.
 
+On extended displays, the screensaver animates only on the primary display
+selected in macOS Displays settings; all secondary displays show black.
+It follows changes to the primary display while running. Mirrored displays
+share the same content. System Settings previews and the preview app animate
+on any display, including when the preview app is full screen.
+
 ## Build and install
 
 Install Apple's Command Line Tools (`xcode-select --install`) if needed, then:
@@ -122,7 +128,11 @@ Hosted builds use `bash macos/test.sh --engine-only` because GPU/OpenGL access
 is not guaranteed. The full reference and native smoke checks remain local.
 
 The bundle smoke test checks actual principal-class loading, Metal shader
-compilation, preview/full-size view initialization, resize and restart. System
+compilation, preview/full-size view initialization, resize and restart. It
+also uses controlled display identities to check primary selection, secondary
+and unknown-display black rendering, transitions back to animation, and the
+preview exemption. These checks do not verify display identity reported by
+the actual macOS screensaver host. System
 Settings installation, lock-screen operation, multiple physical displays,
 sleep/wake and Intel execution require manual testing on the respective host.
 
