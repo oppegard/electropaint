@@ -2,6 +2,12 @@
 set -euo pipefail
 cd "$(dirname "$0")/.."
 output="$PWD/macos/build"
+source_revision=$(git rev-parse --verify HEAD 2>/dev/null || true)
+if [[ "$source_revision" =~ ^[0-9a-f]{40,64}$ ]]; then
+    source_revision=${source_revision:0:7}
+else
+    source_revision=unknown
+fi
 mkdir -p "$output/Electropaint.saver/Contents/MacOS" "$output/Electropaint.saver/Contents/Resources"
 sdk=$(xcrun --sdk macosx --show-sdk-path)
 xcrun swift macos/generate-icon.swift "$output/Electropaint.iconset"
@@ -35,6 +41,7 @@ cp macos/Info.plist "$output/Electropaint Preview.app/Contents/Info.plist"
 /usr/libexec/PlistBuddy -c 'Set :CFBundlePackageType APPL' "$output/Electropaint Preview.app/Contents/Info.plist"
 /usr/libexec/PlistBuddy -c 'Set :CFBundleIdentifier com.oppegard.electropaint.preview' "$output/Electropaint Preview.app/Contents/Info.plist"
 /usr/libexec/PlistBuddy -c 'Set :NSPrincipalClass NSApplication' "$output/Electropaint Preview.app/Contents/Info.plist"
+/usr/libexec/PlistBuddy -c "Add :ElectropaintGitRevision string $source_revision" "$output/Electropaint Preview.app/Contents/Info.plist"
 codesign --force --sign - "$output/Electropaint.saver"
 codesign --force --sign - "$output/Electropaint Preview.app"
 plutil -lint "$output/Electropaint.saver/Contents/Info.plist"
