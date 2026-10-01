@@ -33,6 +33,11 @@ bundle-icon metadata, with presentation determined by macOS.
 
 The preview application runs the same ScreenSaverView and Metal renderer.
 Resizing its window changes the projection without restarting the script.
+Its title includes the build's seven-character Git commit hash in parentheses
+(`unknown` when built without Git metadata). Press Space to pause or resume
+from the current script position; holding Space toggles only once. Use
+Control-Command-F to enter or leave full screen, Command-W to close the window,
+and Command-Q to quit. Closing the last window also quits the preview app.
 The screensaver pauses on stop and resumes on start. Each view owns its
 animation state; there is no customization sheet, alternate session, or key
 binding to change the animation.
