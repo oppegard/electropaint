@@ -112,12 +112,28 @@ Sources:
   error 1.1920929e-05. Vendored C and header hashes remain unchanged.
 - Universal arm64/x86_64 bundle builds, actionlint and shellcheck passed.
 - Native tests exercise Metal callbacks, duplicate host suppression, resize,
-  detach, stop/restart and view release. This local display session is locked.
+  detach, stop/restart and view release. The 2026-09-30 local display session was locked.
   A minimal standalone Metal application confirmed the same three initial
   callbacks followed by suspension; GPU commands completed without error.
-  Continuous and resumed display presentation remain tests for an unlocked
-  session. Physical high-refresh playback, macOS 11–13 and Intel runtime
-  behavior remain hardware validation items.
+  The unlocked-session follow-up below verifies continuous/resumed callbacks.
+  Physical high-refresh playback, macOS 11–13 and Intel runtime behavior
+  remain hardware validation items.
 - Metal callbacks follow Apple's supplied-drawable presentation contract:
   commit rendering work, then present before the display-link deadline.
   https://developer.apple.com/documentation/quartzcore/cametaldisplaylinkdelegate/metaldisplaylink(_:needsupdate:)
+
+## Unlocked hardware validation — 2026-10-01
+
+- Re-ran the native lifecycle suite with the session unlocked. Continuous
+  Metal callbacks and resumed callbacks passed without the locked-session
+  skips, along with resizing, detach/fallback, duplicate host suppression,
+  stop/restart and view release.
+- Measured the downloaded PR artifact built from
+  `f669b3c832e2977d23c6fe198aca1a63443375e8` on the Built-in Retina Display,
+  which reports a maximum of 60 Hz. A three-second run recorded 178 drawing
+  callbacks, approximately 59.23 Hz across their target timestamps, and 171
+  positive-time drawable presentation notifications before sampling.
+- The user confirmed smooth motion, correct window resizing and Command-Q
+  behavior in the downloaded artifact's preview app. This display cannot
+  establish physical 120 Hz playback; higher-rate, macOS 11–13 and Intel
+  hardware checks remain outstanding.

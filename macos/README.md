@@ -61,6 +61,10 @@ that existed in the 1994 demo. The operating system controls actual callback
 frequency and may reduce it for power or visibility. Timing tests cover
 47.95, 48, 50, 59.94, 60, 75, 120, 144, 165 and 240 Hz; physical high-refresh
 presentation and macOS 11–13 runtime behavior still need hardware validation.
+Unlocked-session tests on 2026-10-01 verified continuous drawing and resumed
+callbacks on a 60 Hz built-in display. The PR artifact measured approximately
+59.23 Hz callback cadence over three seconds; the user confirmed smooth
+motion, correct resizing and Command-Q behavior.
 
 ## Source fidelity
 
