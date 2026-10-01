@@ -1,7 +1,7 @@
 # macOS preview title and window controls
 
 Status: approved by the user on 2026-10-01; implementation and local checks
-complete; PR preparation in progress. The
+complete; PR https://github.com/oppegard/electropaint/pull/6 created. The
 user confirmed that the title suffix should be the short Git commit hash.
 
 ## Proposed changes and reasoning
@@ -60,7 +60,7 @@ https://developer.apple.com/design/human-interface-guidelines/going-full-screen
 - [x] Add native Close Window and full-screen commands.
 - [x] Add Space pause/resume using the existing animation lifecycle.
 - [x] Update documentation and complete relevant validation.
-- [ ] Commit, push, and create the PR with this plan and checklist.
+- [x] Commit, push, and create the PR with this plan and checklist.
 
 ## Implementation evidence
 
