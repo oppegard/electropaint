@@ -28,8 +28,11 @@ static void ep_seed(long seed);
     X(hue) X(light) X(alpha) X(alphaout) X(size) X(outline) X(fill) \
     X(gflip) X(gspin) X(nlimit) X(n) X(t) X(seqList) X(editSeq)
 #define FIELD(v) __typeof__(v) saved_##v;
+struct EPGlobals { EP_GLOBALS(FIELD) };
 struct EPState {
     EP_GLOBALS(FIELD)
+    struct EPGlobals previous;
+    unsigned canonicalFrames;
     uint64_t random;
     double model[32][16], projection[16];
     unsigned stack, mode, primitive, pendingCount;
@@ -152,8 +155,34 @@ EPState *ep_create(uint32_t seed) {
 const EPFrame *ep_step(EPState *s,int width,int height) {
     assert(s && width>0 && height>0);
     pthread_mutex_lock(&engineLock); active=s; restore(s);
+#define PREVIOUS(v) memcpy(&s->previous.saved_##v, &v, sizeof(v));
+    EP_GLOBALS(PREVIOUS)
     reshape__GiT1(width,height); display__Gv(s); save(s);
+    if (!s->canonicalFrames) { EP_GLOBALS(PREVIOUS) }
+#undef PREVIOUS
+    if (s->canonicalFrames < 2) ++s->canonicalFrames;
     assert(s->stack==0); pthread_mutex_unlock(&engineLock); return &s->frame;
+}
+const EPFrame *ep_render(EPState *s,int width,int height,float fraction) {
+    assert(s && s->canonicalFrames && width>0 && height>0);
+    assert(isfinite(fraction) && fraction>=0 && fraction<=1);
+    pthread_mutex_lock(&engineLock); active=s;
+    if (s->canonicalFrames == 1) fraction = 1;
+    if (fraction == 1) restore(s);
+    else {
+#define RESTORE_PREVIOUS(v) memcpy(&v, &s->previous.saved_##v, sizeof(v));
+        EP_GLOBALS(RESTORE_PREVIOUS)
+#undef RESTORE_PREVIOUS
+    }
+    /* The default script draws at phase zero, then advances its phase to one. */
+    t = fraction == 1 ? 0 : fraction;
+    if (fraction>0 && fraction<1) {
+        float endpoints[2]={s->previous.saved_wheel,s->saved_wheel};
+        wheel=foldtwixt__GiPffT3(1,endpoints,fraction,360);
+    }
+    reshape__GiT1(width,height); drawit__Gv(n,s);
+    assert(s->stack==0);
+    pthread_mutex_unlock(&engineLock); return &s->frame;
 }
 void ep_destroy(EPState *s) {
     if(!s) return;

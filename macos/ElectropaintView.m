@@ -1,9 +1,29 @@
 #import "ElectropaintView.h"
 #import "EPAdapter.h"
+#import "EPClock.h"
+#import <CoreVideo/CoreVideo.h>
+#import <QuartzCore/CAMetalDisplayLink.h>
+#include <stdatomic.h>
 #import <Metal/Metal.h>
 #import <QuartzCore/CAMetalLayer.h>
 #import <CoreGraphics/CoreGraphics.h>
 #include <time.h>
+
+@interface EPDisplayRequests : NSObject {
+@public
+    atomic_bool pending;
+}
+@end
+@implementation EPDisplayRequests
+- (instancetype)init {
+    self = [super init];
+    if (self) atomic_init(&pending, false);
+    return self;
+}
+@end
+
+@interface ElectropaintView () <CAMetalDisplayLinkDelegate>
+@end
 
 @implementation ElectropaintView {
     EPState *_engine;
@@ -11,7 +31,13 @@
     id<MTLDevice> _device;
     id<MTLCommandQueue> _queue;
     id<MTLRenderPipelineState> _pipeline;
-    CFTimeInterval _lastTime, _accumulator;
+    EPClock _clock;
+    BOOL _primed, _running;
+    NSUInteger _generation;
+    CAMetalDisplayLink *_displayLink API_AVAILABLE(macos(14.0));
+    CVDisplayLinkRef _legacyLink;
+    NSTimer *_fallbackTimer;
+    id _screenObserver;
 }
 
 - (instancetype)initWithFrame:(NSRect)frame isPreview:(BOOL)preview {
@@ -52,7 +78,11 @@
     return self;
 }
 
-- (void)dealloc { ep_destroy(_engine); }
+- (void)dealloc {
+    [self invalidateDriver];
+    if (_screenObserver) [[NSNotificationCenter defaultCenter] removeObserver:_screenObserver];
+    ep_destroy(_engine);
+}
 - (BOOL)hasConfigureSheet { return NO; }
 - (NSWindow *)configureSheet { return nil; }
 - (BOOL)isOpaque { return YES; }
@@ -65,16 +95,105 @@
 }
 - (void)layout { [super layout]; [self updateDrawableSize]; }
 - (void)viewDidChangeBackingProperties { [super viewDidChangeBackingProperties]; [self updateDrawableSize]; }
-- (void)viewDidMoveToWindow { [super viewDidMoveToWindow]; [self updateDrawableSize]; }
+- (void)viewDidMoveToWindow {
+    [super viewDidMoveToWindow];
+    [self updateDrawableSize];
+    if (_screenObserver) [[NSNotificationCenter defaultCenter] removeObserver:_screenObserver];
+    _screenObserver = nil;
+    if (self.window) {
+        __weak ElectropaintView *weakSelf = self;
+        _screenObserver = [[NSNotificationCenter defaultCenter]
+            addObserverForName:NSWindowDidChangeScreenNotification object:self.window
+            queue:[NSOperationQueue mainQueue] usingBlock:^(NSNotification *notification) {
+                (void)notification;
+                [weakSelf updateDrawableSize];
+                [weakSelf restartDriver];
+            }];
+    }
+    [self restartDriver];
+}
+- (void)invalidateDriver {
+    ++_generation;
+    if (@available(macOS 14.0, *)) { [_displayLink invalidate]; _displayLink = nil; }
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wdeprecated-declarations"
+    if (_legacyLink) { CVDisplayLinkStop(_legacyLink); CVDisplayLinkRelease(_legacyLink); _legacyLink = NULL; }
+#pragma clang diagnostic pop
+    [_fallbackTimer invalidate]; _fallbackTimer = nil;
+}
+- (void)restartDriver {
+    ep_clock_pause(&_clock);
+    if (@available(macOS 14.0, *)) {
+        if (self.window.screen && _displayLink) {
+            float maximum = MAX(1, self.window.screen.maximumFramesPerSecond);
+            _displayLink.preferredFrameRateRange = CAFrameRateRangeMake(MIN(60, maximum), maximum, maximum);
+            _displayLink.paused = !_running;
+            return;
+        }
+    }
+    [self invalidateDriver];
+    if (!_running) return;
+    if (@available(macOS 14.0, *)) {
+        if (self.window.screen) {
+            _displayLink = [[CAMetalDisplayLink alloc] initWithMetalLayer:_metalLayer];
+            _displayLink.delegate = self;
+            float maximum = MAX(1, self.window.screen.maximumFramesPerSecond);
+            _displayLink.preferredFrameRateRange = CAFrameRateRangeMake(MIN(60, maximum), maximum, maximum);
+            _displayLink.paused = NO;
+            [_displayLink addToRunLoop:[NSRunLoop mainRunLoop] forMode:NSRunLoopCommonModes];
+            return;
+        }
+    }
+    __weak ElectropaintView *weakSelf = self;
+    NSUInteger generation = _generation;
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wdeprecated-declarations"
+    NSNumber *screenID = self.window.screen.deviceDescription[@"NSScreenNumber"];
+    if (screenID && CVDisplayLinkCreateWithCGDisplay(screenID.unsignedIntValue, &_legacyLink) == kCVReturnSuccess) {
+        EPDisplayRequests *requests = [EPDisplayRequests new];
+        CVReturn configured = CVDisplayLinkSetOutputHandler(_legacyLink, ^CVReturn(CVDisplayLinkRef link,
+            const CVTimeStamp *now, const CVTimeStamp *output, CVOptionFlags flags, CVOptionFlags *outFlags) {
+            (void)link; (void)now; (void)flags; (void)outFlags;
+            if (atomic_exchange(&requests->pending, true)) return kCVReturnSuccess;
+            double timestamp = (output->flags & kCVTimeStampHostTimeValid)
+                ? (double)output->hostTime / CVGetHostClockFrequency() : CACurrentMediaTime();
+            dispatch_async(dispatch_get_main_queue(), ^{
+                ElectropaintView *view = weakSelf;
+                if (view && view->_running && view->_generation == generation)
+                    [view renderAtTimestamp:timestamp drawable:nil];
+                atomic_store(&requests->pending, false);
+            });
+            return kCVReturnSuccess;
+        });
+        if (configured == kCVReturnSuccess && CVDisplayLinkStart(_legacyLink) == kCVReturnSuccess) return;
+        CVDisplayLinkRelease(_legacyLink); _legacyLink = NULL;
+    }
+#pragma clang diagnostic pop
+    _fallbackTimer = [NSTimer timerWithTimeInterval:1.0/60.0 repeats:YES block:^(NSTimer *timer) {
+        (void)timer;
+        [weakSelf renderAtTimestamp:CACurrentMediaTime() drawable:nil];
+    }];
+    [[NSRunLoop mainRunLoop] addTimer:_fallbackTimer forMode:NSRunLoopCommonModes];
+}
 - (void)startAnimation {
-    _lastTime = 0;
-    _accumulator = 0;
+    if (_running) return;
+    _running = YES;
     [super startAnimation];
+    [self restartDriver];
 }
 - (void)stopAnimation {
+    _running = NO;
+    if (@available(macOS 14.0, *)) {
+        if (_displayLink) _displayLink.paused = YES;
+        else [self invalidateDriver];
+    } else [self invalidateDriver];
+    ep_clock_pause(&_clock);
     [super stopAnimation];
-    _lastTime = 0;
-    _accumulator = 0;
+}
+- (void)metalDisplayLink:(CAMetalDisplayLink *)link needsUpdate:(CAMetalDisplayLinkUpdate *)update
+    API_AVAILABLE(macos(14.0)) {
+    if (_running && link == _displayLink)
+        [self renderAtTimestamp:update.targetPresentationTimestamp drawable:update.drawable];
 }
 - (BOOL)shouldAnimateOnCurrentDisplay {
     if (self.isPreview) return YES;
@@ -82,26 +201,26 @@
     return display != nil && display.unsignedIntValue == CGMainDisplayID();
 }
 - (void)animateOneFrame {
-    if (!_pipeline || self.bounds.size.width <= 0 || self.bounds.size.height <= 0) return;
-    if (![self shouldAnimateOnCurrentDisplay]) {
-        _lastTime = 0;
-        _accumulator = 0;
-        [self renderFrame:NULL];
-        return;
-    }
-    CFTimeInterval now = CACurrentMediaTime();
-    _accumulator += _lastTime == 0 ? 1.0 / 60.0 : MIN(MAX(0, now - _lastTime), 8.0 / 60.0);
-    _lastTime = now;
-    const EPFrame *frame = NULL;
-    while (_accumulator + 1e-9 >= 1.0 / 60.0) {
-        frame = ep_step(_engine, (int)_metalLayer.drawableSize.width, (int)_metalLayer.drawableSize.height);
-        _accumulator -= 1.0 / 60.0;
-    }
-    if (!frame) return;
-    [self renderFrame:frame];
+    // ScreenSaver hosts may still call this while the display link owns drawing.
+    if (!_running || _legacyLink || _fallbackTimer) return;
+    if (@available(macOS 14.0, *)) { if (_displayLink) return; }
+    [self renderAtTimestamp:CACurrentMediaTime() drawable:nil];
 }
-- (void)renderFrame:(const EPFrame *)frame {
-    id<CAMetalDrawable> drawable = [_metalLayer nextDrawable];
+- (void)renderAtTimestamp:(CFTimeInterval)timestamp drawable:(id<CAMetalDrawable>)drawable {
+    if (!_running || !_pipeline || self.bounds.size.width <= 0 || self.bounds.size.height <= 0) return;
+    const EPFrame *frame = NULL;
+    if ([self shouldAnimateOnCurrentDisplay]) {
+        int width = (int)_metalLayer.drawableSize.width, height = (int)_metalLayer.drawableSize.height;
+        if (!_primed) { ep_step(_engine, width, height); _primed = YES; }
+        EPClockUpdate update = ep_clock_advance(&_clock, timestamp);
+        for (unsigned i=0; i<update.steps; ++i) ep_step(_engine, width, height);
+        frame = ep_render(_engine, width, height, update.fraction);
+    } else ep_clock_pause(&_clock);
+    [self renderFrame:frame drawable:drawable];
+}
+- (void)renderFrame:(const EPFrame *)frame drawable:(id<CAMetalDrawable>)drawable {
+    BOOL displayLinkDrawable = drawable != nil;
+    if (!drawable) drawable = [_metalLayer nextDrawable];
     if (!drawable) return;
     MTLRenderPassDescriptor *pass = [MTLRenderPassDescriptor renderPassDescriptor];
     pass.colorAttachments[0].texture = drawable.texture;
@@ -123,7 +242,9 @@
         }
     }
     [encoder endEncoding];
-    [command presentDrawable:drawable];
+    if (!displayLinkDrawable) [command presentDrawable:drawable];
     [command commit];
+    // Metal display links require immediate presentation before their deadline.
+    if (displayLinkDrawable) [drawable present];
 }
 @end
