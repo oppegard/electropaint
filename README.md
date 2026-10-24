@@ -1,9 +1,20 @@
-# Electropaint — browser reconstruction
+# Electropaint
 
-Electropaint is a kinetic graphics program built from repeating squares,
-layered transformations, color, and time. This repository is a source-led port
-of Electropaint to TypeScript and native WebGL2, designed to run as a standalone
-static site in a current browser with no production runtime dependencies.
+**Silicon Graphics horsepower. Neon geometry. Now in your browser.**
+
+[![Animated Electropaint demo with neon squares in motion](docs/assets/electropaint.gif)](https://oppegard.github.io/electropaint/)
+
+[**Run the live demo →**](https://oppegard.github.io/electropaint/)
+
+Electropaint comes from the **Silicon Graphics (SGI)** workstation era of the
+mid-1980s to early 1990s, when demos put real-time graphics horsepower on
+display. Created by **David A. Tristram** as an IRIX screensaver, it turns
+repeating squares into hypnotic waves of color and motion.
+
+Today, that neon geometry is pure retro eye candy with synthwave vibes.
+This faithful browser reconstruction brings the SGI classic to TypeScript
+and native WebGL2, with no production runtime dependencies. Open the demo,
+go full screen, and let it roll.
 
 ## Background
 
