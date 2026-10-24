@@ -1,6 +1,6 @@
 # *Electropaint* for Mac & Web
 
-[![Electropaint's 1994 default script animated at 60 fps](docs/assets/electropaint.webp)](https://oppegard.github.io/electropaint/)
+[![Electropaint's 1994 default script animated at 30 fps](docs/assets/electropaint.webp)](https://oppegard.github.io/electropaint/)
 
 [**Run the live demo →**](https://oppegard.github.io/electropaint/)
 
