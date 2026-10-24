@@ -1,10 +1,13 @@
 # SGI Electropaint - Browser & Screensaver
 
-[![Animated Electropaint demo with neon squares in motion](docs/assets/electropaint.gif)](https://oppegard.github.io/electropaint/)
+[![Animated Electropaint demo with four mirrored wings of neon squares at 60 fps](docs/assets/electropaint.webp)](https://oppegard.github.io/electropaint/)
 
 [**Run the live demo →**](https://oppegard.github.io/electropaint/)
 
 [**Download the Mac Screensaver →**](https://github.com/oppegard/electropaint/releases/tag/latest)
+
+60 fps previews: [WebP](docs/assets/electropaint.webp) ·
+[APNG](docs/assets/electropaint-60fps.png).
 
 Electropaint comes from the **Silicon Graphics (SGI)** workstation era of the
 mid-1980s to early 1990s, when demos put real-time graphics horsepower on
