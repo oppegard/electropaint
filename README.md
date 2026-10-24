@@ -1,20 +1,15 @@
-# Electropaint
-
-**Silicon Graphics horsepower. Neon geometry. Now in your browser.**
+# SGI Electropaint - Browser & Screensaver
 
 [![Animated Electropaint demo with neon squares in motion](docs/assets/electropaint.gif)](https://oppegard.github.io/electropaint/)
 
 [**Run the live demo →**](https://oppegard.github.io/electropaint/)
 
+[**Download the Mac Screensaver →**](https://github.com/oppegard/electropaint/releases/tag/latest)
+
 Electropaint comes from the **Silicon Graphics (SGI)** workstation era of the
 mid-1980s to early 1990s, when demos put real-time graphics horsepower on
 display. Created by **David A. Tristram** as an IRIX screensaver, it turns
 repeating squares into hypnotic waves of color and motion.
-
-Today, that neon geometry is pure retro eye candy with synthwave vibes.
-This faithful browser reconstruction brings the SGI classic to TypeScript
-and native WebGL2, with no production runtime dependencies. Open the demo,
-go full screen, and let it roll.
 
 ## Background
 
