@@ -1,4 +1,4 @@
-# SGI Electropaint - Browser & Screensaver
+# SGI's Electropaint for Mac & Web
 
 [![Animated Electropaint demo with four mirrored wings of neon squares at 60 fps](docs/assets/electropaint.webp)](https://oppegard.github.io/electropaint/)
 
