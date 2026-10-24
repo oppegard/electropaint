@@ -195,3 +195,43 @@ jobs:
             gh release create latest release/* --repo "$GH_REPO" --title latest \
               --target "$SOURCE_SHA" --prerelease --latest=false --notes-file release-notes.md
           fi
+
+      - name: Refresh latest publication date
+        if: steps.merge.outputs.merged == 'true'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+        run: |
+          original=$(gh api "repos/$GH_REPO/releases/tags/latest")
+          release_id=$(jq -er '.id' <<< "$original")
+          previous_published_at=$(jq -er '.published_at | fromdateiso8601' <<< "$original")
+          started_at=$(date -u +%s)
+          trap '
+            if [[ "$?" -ne 0 ]]; then
+              if ! gh api --method PATCH "repos/$GH_REPO/releases/$release_id" \
+                -F draft=false -F prerelease=true -f make_latest=false --silent; then
+                echo "::error::Failed to restore latest as a published prerelease. Manual recovery may be required." >&2
+              fi
+            fi
+          ' EXIT
+          gh api --method PATCH "repos/$GH_REPO/releases/$release_id" \
+            -F draft=true --silent
+          gh api --method PATCH "repos/$GH_REPO/releases/$release_id" \
+            -F draft=false -F prerelease=true -f make_latest=false --silent
+          published=$(gh api "repos/$GH_REPO/releases/tags/latest")
+          jq -e --argjson original "$original" \
+            --argjson previous_published_at "$previous_published_at" \
+            --argjson started_at "$started_at" --argjson now "$(date -u +%s)" '
+              .id == $original.id and
+              .tag_name == "latest" and
+              .draft == false and
+              .prerelease == true and
+              (.assets | map(.id) | sort) == ($original.assets | map(.id) | sort) and
+              (.published_at | fromdateiso8601) >= $previous_published_at and
+              (.published_at | fromdateiso8601) >= $started_at and
+              (.published_at | fromdateiso8601) <= $now
+            ' <<< "$published" > /dev/null || {
+              echo "::error::Release publication date or preserved release metadata failed verification." >&2
+              exit 1
+            }
+          trap - EXIT
