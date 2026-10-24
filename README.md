@@ -1,4 +1,4 @@
-# SGI's Electropaint for Mac & Web
+# *Electropaint* for Mac & Web
 
 [![Electropaint's 1994 default script animated at 60 fps](docs/assets/electropaint.webp)](https://oppegard.github.io/electropaint/)
 
@@ -12,6 +12,14 @@ display. Created by **David A. Tristram** as an IRIX screensaver, it turns
 repeating squares into hypnotic waves of color and motion.
 
 ## Background
+
+Growing up in the 1990s, I remember being captivated by an [SGI O2](https://en.wikipedia.org/wiki/SGI_O2) on the cover of *UNIX Review* magazine at my local grocery store. SGI workstations always held a certain mystique for me. Beautiful, almost alien machines that seemed impossibly out of reach. The closest I ever got was popping Jurassic Park into the VCR ("It's a UNIX system! I know this!").
+
+Somewhere along the way, I discovered *Electropaint*, a mesmerizing screensaver for SGI workstations. I never had the chance to see it running on actual SGI hardware.
+
+This is my love letter to *Electropaint*.
+
+## Historical context
 
 David A. Tristram created Electropaint as an SGI IRIX screensaver. The preserved
 source carries a 1986 Panel Library/Electropaint copyright notice and describes
