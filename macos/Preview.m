@@ -44,6 +44,11 @@
     [NSApp activateIgnoringOtherApps:YES];
     [self.saver startAnimation];
 }
+- (void)showSettings:(id)sender {
+    (void)sender;
+    if (!self.window.attachedSheet)
+        [self.window beginSheet:self.saver.configureSheet completionHandler:nil];
+}
 - (BOOL)applicationShouldTerminateAfterLastWindowClosed:(NSApplication *)sender { (void)sender; return YES; }
 - (void)applicationWillTerminate:(NSNotification *)notification {
     (void)notification; [self.saver stopAnimation];
@@ -60,6 +65,11 @@ int main(void) {
             action:@selector(terminate:) keyEquivalent:@"q"];
         quitItem.keyEquivalentModifierMask = NSEventModifierFlagCommand;
         quitItem.target = app;
+        NSMenuItem *settingsItem = [[NSMenuItem alloc] initWithTitle:@"Settings…"
+            action:@selector(showSettings:) keyEquivalent:@","];
+        settingsItem.keyEquivalentModifierMask = NSEventModifierFlagCommand;
+        [applicationMenu addItem:settingsItem];
+        [applicationMenu addItem:[NSMenuItem separatorItem]];
         [applicationMenu addItem:quitItem];
         applicationItem.submenu = applicationMenu;
         [menuBar addItem:applicationItem];
@@ -82,6 +92,7 @@ int main(void) {
         app.mainMenu = menuBar;
         PreviewDelegate *delegate = [PreviewDelegate new];
         app.delegate = delegate;
+        settingsItem.target = delegate;
         [app run];
     }
     return 0;

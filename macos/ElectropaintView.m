@@ -1,6 +1,7 @@
 #import "ElectropaintView.h"
 #import "EPAdapter.h"
 #import "EPClock.h"
+#import "EPMotionSettings.h"
 #import <CoreVideo/CoreVideo.h>
 #import <QuartzCore/CAMetalDisplayLink.h>
 #include <stdatomic.h>
@@ -27,6 +28,7 @@
 
 @implementation ElectropaintView {
     EPState *_engine;
+    EPMotionSettings *_motionSettings;
     CAMetalLayer *_metalLayer;
     id<MTLDevice> _device;
     id<MTLCommandQueue> _queue;
@@ -41,13 +43,22 @@
 }
 
 - (instancetype)initWithFrame:(NSRect)frame isPreview:(BOOL)preview {
+    return [self initWithFrame:frame isPreview:preview defaults:nil];
+}
+
+- (instancetype)initWithFrame:(NSRect)frame isPreview:(BOOL)preview defaults:(NSUserDefaults *)defaults {
     self = [super initWithFrame:frame isPreview:preview];
     if (!self) return nil;
     self.animationTimeInterval = 1.0 / 60.0;
     _engine = ep_create((uint32_t)time(NULL));
     _device = MTLCreateSystemDefaultDevice();
     if (!_engine || !_device) return nil;
-    ep_set_motion_limits(_engine, EPDefaultMotionLimits);
+    __weak ElectropaintView *weakSelf = self;
+    _motionSettings = [[EPMotionSettings alloc] initWithDefaults:defaults apply:^(EPMotionLimits limits) {
+        ElectropaintView *view = weakSelf;
+        if (view) ep_set_motion_limits(view->_engine, limits);
+    }];
+    ep_set_motion_limits(_engine, [_motionSettings loadLimits]);
     _queue = [_device newCommandQueue];
     NSString *source = @"#include <metal_stdlib>\n"
         "using namespace metal;\n"
@@ -84,8 +95,8 @@
     if (_screenObserver) [[NSNotificationCenter defaultCenter] removeObserver:_screenObserver];
     ep_destroy(_engine);
 }
-- (BOOL)hasConfigureSheet { return NO; }
-- (NSWindow *)configureSheet { return nil; }
+- (BOOL)hasConfigureSheet { return YES; }
+- (NSWindow *)configureSheet { return [_motionSettings sheet]; }
 - (BOOL)isOpaque { return YES; }
 - (void)updateDrawableSize {
     CGFloat scale = self.window.backingScaleFactor;
@@ -178,6 +189,7 @@
 }
 - (void)startAnimation {
     if (_running) return;
+    ep_set_motion_limits(_engine, [_motionSettings loadLimits]);
     _running = YES;
     [super startAnimation];
     [self restartDriver];
