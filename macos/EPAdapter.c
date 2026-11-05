@@ -5,6 +5,9 @@
 #include <stdlib.h>
 #include <string.h>
 
+const EPMotionLimits EPDefaultMotionLimits = {120, 120};
+const EPMotionLimits EPMaximumMotionLimits = {313.8, 600};
+
 static double ep_random(void);
 static void ep_seed(long seed);
 #define glViewport ep_viewport
@@ -33,6 +36,7 @@ struct EPState {
     EP_GLOBALS(FIELD)
     struct EPGlobals previous;
     unsigned canonicalFrames;
+    EPMotionLimits motionLimits;
     uint64_t random;
     double model[32][16], projection[16];
     unsigned stack, mode, primitive, pendingCount;
@@ -148,16 +152,51 @@ void wrap_glEnd(const void *context) {
 void wrap_glFinish(const void *context) { (void)context; }
 EPState *ep_create(uint32_t seed) {
     EPState *s=calloc(1,sizeof(*s)); if(!s) return NULL;
+    s->motionLimits = EPMaximumMotionLimits;
     pthread_mutex_lock(&engineLock); active=s; restore(s); bflag=1;
     init_ep(); ep_seed(seed); save(s); identity(s->model[0]);
     pthread_mutex_unlock(&engineLock); return s;
+}
+bool ep_set_motion_limits(EPState *s, EPMotionLimits limits) {
+    if (!s || !isfinite(limits.maxSpinDegreesPerSecond) ||
+        !isfinite(limits.maxFlipDegreesPerSecond) ||
+        limits.maxSpinDegreesPerSecond < 0 || limits.maxFlipDegreesPerSecond < 0 ||
+        limits.maxSpinDegreesPerSecond > EPMaximumMotionLimits.maxSpinDegreesPerSecond ||
+        limits.maxFlipDegreesPerSecond > EPMaximumMotionLimits.maxFlipDegreesPerSecond) return false;
+    pthread_mutex_lock(&engineLock);
+    s->motionLimits = limits;
+    pthread_mutex_unlock(&engineLock);
+    return true;
 }
 const EPFrame *ep_step(EPState *s,int width,int height) {
     assert(s && width>0 && height>0);
     pthread_mutex_lock(&engineLock); active=s; restore(s);
 #define PREVIOUS(v) memcpy(&s->previous.saved_##v, &v, sizeof(v));
     EP_GLOBALS(PREVIOUS)
-    reshape__GiT1(width,height); display__Gv(s); save(s);
+    int previousIndex = n;
+    float previousSpin = gspin, previousFlip = gflip;
+    reshape__GiT1(width,height); display__Gv(s);
+    if (n != previousIndex) {
+        float spinStep = (float)(s->motionLimits.maxSpinDegreesPerSecond / 60);
+        float flipStep = (float)(s->motionLimits.maxFlipDegreesPerSecond / 60);
+        bool corrected = false;
+        if (fabsf(acttable[80]->flt_g) > spinStep) {
+            spin[n] = gspin = fmodf(previousSpin + copysignf(spinStep, acttable[80]->flt_g), 360.0f);
+            corrected = true;
+        }
+        if (fabsf(acttable[87]->flt_g) > flipStep) {
+            flip[n] = gflip = fmodf(previousFlip + copysignf(flipStep, acttable[87]->flt_g), 360.0f);
+            corrected = true;
+        }
+        if (corrected) {
+            /* An integrated source frame draws at phase zero, then advances t. */
+            float phase = t;
+            t = 0;
+            drawit__Gv(n,s);
+            t = phase;
+        }
+    }
+    save(s);
     if (!s->canonicalFrames) { EP_GLOBALS(PREVIOUS) }
 #undef PREVIOUS
     if (s->canonicalFrames < 2) ++s->canonicalFrames;

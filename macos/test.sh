@@ -5,6 +5,9 @@ mkdir -p macos/build
 xcrun clang -std=gnu11 -g -O1 -fsanitize=address,undefined \
     macos/EPAdapter.c macos/tests.c -o macos/build/engine-tests
 macos/build/engine-tests
+xcrun clang -std=gnu11 -g -O1 -fsanitize=address,undefined \
+    macos/motion-tests.c -o macos/build/motion-tests
+macos/build/motion-tests
 case "${1:-}" in
     --engine-only) exit 0 ;;
     '') ;;

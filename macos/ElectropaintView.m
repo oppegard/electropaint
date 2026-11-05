@@ -47,6 +47,7 @@
     _engine = ep_create((uint32_t)time(NULL));
     _device = MTLCreateSystemDefaultDevice();
     if (!_engine || !_device) return nil;
+    ep_set_motion_limits(_engine, EPDefaultMotionLimits);
     _queue = [_device newCommandQueue];
     NSString *source = @"#include <metal_stdlib>\n"
         "using namespace metal;\n"
