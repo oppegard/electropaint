@@ -16,11 +16,11 @@ for arch in arm64 x86_64; do
     xcrun clang -arch "$arch" -isysroot "$sdk" -mmacosx-version-min=11.0 \
         -std=gnu11 -O2 -c macos/EPAdapter.c -o "$output/adapter-$arch.o"
     xcrun clang -arch "$arch" -isysroot "$sdk" -mmacosx-version-min=11.0 \
-        -fobjc-arc -O2 -Wall -Wextra -bundle macos/ElectropaintView.m "$output/adapter-$arch.o" \
+        -fobjc-arc -O2 -Wall -Wextra -bundle macos/ElectropaintView.m macos/EPMotionSettings.m "$output/adapter-$arch.o" \
         -framework ScreenSaver -framework Cocoa -framework Metal -framework QuartzCore -framework CoreVideo \
         -o "$output/saver-$arch"
     xcrun clang -arch "$arch" -isysroot "$sdk" -mmacosx-version-min=11.0 \
-        -fobjc-arc -O2 -Wall -Wextra macos/Preview.m macos/ElectropaintView.m "$output/adapter-$arch.o" \
+        -fobjc-arc -O2 -Wall -Wextra macos/Preview.m macos/ElectropaintView.m macos/EPMotionSettings.m "$output/adapter-$arch.o" \
         -framework ScreenSaver -framework Cocoa -framework Metal -framework QuartzCore -framework CoreVideo \
         -o "$output/preview-$arch"
 done

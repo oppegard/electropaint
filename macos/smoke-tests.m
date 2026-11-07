@@ -81,7 +81,9 @@ int main(int argc, const char **argv) {
         objc_registerClassPair(trackedClass);
         ScreenSaverView *a = [[saverClass alloc] initWithFrame:NSMakeRect(0,0,640,480) isPreview:YES];
         ScreenSaverView *b = [[trackedClass alloc] initWithFrame:NSMakeRect(0,0,1920,1080) isPreview:NO];
-        assert(a && b && !a.hasConfigureSheet && !b.hasConfigureSheet);
+        assert(a && b && a.hasConfigureSheet && b.hasConfigureSheet);
+        assert(a.configureSheet && a.configureSheet == a.configureSheet);
+        assert(a.configureSheet != b.configureSheet);
         assert([a.layer isKindOfClass:[CAMetalLayer class]]);
         assert(((CAMetalLayer *)a.layer).device);
         NSWindow *window = [[NSWindow alloc] initWithContentRect:NSMakeRect(0,0,640,480)
